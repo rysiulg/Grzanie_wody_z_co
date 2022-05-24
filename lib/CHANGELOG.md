@@ -1,0 +1,1 @@
+Usunięto weryfikację autoryzacji -błędy String "" często rozpoznaje jako 0.00 zarowno w arduino jak i platformio

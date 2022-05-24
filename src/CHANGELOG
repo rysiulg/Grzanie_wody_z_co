@@ -1,0 +1,25 @@
+Sterowanie grzeniem wody z co
+Arduino MiniPro->ESP8266 v.2.7.1 arduino 1.8.12 i zmodyfikowany Filesystem do 3MBSketchOTA/SPIFF1MB dla NodeMCU1.0 (ESP 12E) !!!!!!!!!!!!!!!!!!!!!!!!
+
+//v.1.0 20190922start
+//v.1.1 -modyfikacja przekaznika 20190923 -przepiecie by dzialal domyślnie aktywnie bez zasilania oraz odłączanie pompy do wody poprzez aktywacje przekaznika
+//v.2 -modyfikacja do ESP8266 Wifi+Supla+http update+SSR zamiast przekaznika
+//v2.02 modyfikacje dla supla 2.3 i enchanced config +czujnik co i bme085 (cisnienie i temp)
+//v2.03 modyfikacje zmiana interfejsu www
+//v2.05 obsluga licznika energii z zapisaniem np. co 15 minut w SPIFF i obsluga definicji SN 18B20 z config -nie startowalo jeszcze gdy zlapalo wifi...
+//v2.10 powrot do ESP 2.6.1 httpupdater robil crash po aktualizacji w wersji 2.7
+//2.11 spiecie update menager i async web
+//v2.12 skorygowano wylaczanie/wlaczanie pomp i dodany link uptime
+//v2.13 kalibracja gas sensor
+//v2.14 dopisane force by bytton (zuzycie energii)
+//v2.15 wdresety, ustawienie wymuszania pomp w zaleznosci od przycisku i dodatkowo gdy temp na zewnatrz srednia z czujnikow < forceCObelow
+//v2.15a-i drobne poprawki logiki
+//v2.16 -buczalo gdy temp co byla <15 -zmiana na <1, zmniejszona wartosc forceCObelow do 7st
+//v3.00 -move SUPLA to MQTT, upgrade Json 5->6, enable stack protection in esp config, arduino po aktualizacji traktuje string="" jako 0.0000 i przez to autoryzacja sie wysypuje w webhandler
+//v3.01 -drobne poprawki, wywalone z bliblioteki ESPAsyncWebServer linijek by usunac kom. o autoryzacjach  w WebHandlerImpl.h //    if((_username != "" && _password != "") && !request->authenticate(_username.c_str(), _password.c_str()))  return request->requestAuthentication();//44444444444444444444444444444444444444444446666666666666666666666666666666666666666666666666666666666
+//v3.02 -uruchomione z config na guziku
+//v3.02a -aktualizacja ikonek mqtt, dodany prefix mqtt oraz uzupelnione opcje device w mqtt
+//v3.02b -dolozony parametr opozniajacy o 1 godz. wylaczenie wymuszenia zmiany priotytetu pompy z woda na Co gdy temp < od temp aktywacji pomp oraz dodanie do mqtt srednia temp_zewnatrz oraz zapis najpierwco w razie zaniku zasilania by przywrocic poprzedni stan, zwiekszenie do 2 godzin forceco
+//v3.02d -korekty w forceCO i wyswietlaniu sredniej temp zewnatrz oraz wyliczaniu CO. Dopiseny sygnal dBm do www
+//v3.02e -poprawa display i dodany dwukropek do temps
+//v 202205 disable arduino json, ardiuno homeassistant and introduce own implementation
