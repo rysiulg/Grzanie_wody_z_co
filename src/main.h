@@ -197,3 +197,4 @@ void recvMsg(uint8_t *data, size_t len);
 #endif
 String do_stopkawebsite();
 void restart();
+bool PayloadStatus(String payloadStr, bool state);

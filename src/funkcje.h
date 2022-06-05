@@ -897,7 +897,11 @@ bool loadConfig() {
     mqtt_port = CONFIGURATION.mqtt_port;
     najpierwCO = CONFIGURATION.najpierwCO;
     if (najpierwCO == true) waitCOStartingmargin=millis();
-
+    coConstTempCutOff = CONFIGURATION.coConstTempCutOff;
+    forceCObelow = CONFIGURATION.forceCObelow;
+    histereza = CONFIGURATION.histereza;
+    forceWater = CONFIGURATION.forceWater;
+    forceCO = CONFIGURATION.forceCO;
 
     return true; // return 1 if config loaded
   }
@@ -909,28 +913,83 @@ void SaveConfig() {
   //EEPROM.put(1, runNumber);
   // EEPROM.put(1+sizeof(runNumber), energy1used);
   // EEPROM.put(1+sizeof(runNumber)+sizeof(energy1used), energy2used);
+
+  #ifdef debug1
+  Serial.println("Saving config...........................prepare ");
+  #endif
+  #ifdef enableWebSerial
+  if (!starting) {WebSerial.println("Saving config...........................prepare ");}
+  #endif
   SaveEnergy();
+  unsigned int temp =0;
+  //firs read content of eeprom
+  EEPROM.get(1,temp);
+  if (EEPROM.read(CONFIG_START + 0) == CONFIG_VERSION[0] &&
+      EEPROM.read(CONFIG_START + 1) == CONFIG_VERSION[1] &&
+      EEPROM.read(CONFIG_START + 2) == CONFIG_VERSION[2] &&
+      EEPROM.read(CONFIG_START + 3) == CONFIG_VERSION[3] &&
+      EEPROM.read(CONFIG_START + 4) == CONFIG_VERSION[4]){
+  // load (overwrite) the local configuration temp struct
+    for (unsigned int i=0; i<sizeof(configuration_type); i++){
+      *((char*)&CONFTMP + i) = EEPROM.read(CONFIG_START + i);
+    }
+  }
+  if (temp != runNumber ||
+      strcmp(CONFTMP.ssid, ssid) != 0 ||
+      strcmp(CONFTMP.pass, pass) != 0 ||
+      strcmp(CONFTMP.mqtt_server, mqtt_server) != 0 ||
+      strcmp(CONFTMP.mqtt_user, mqtt_user) != 0 ||
+      strcmp(CONFTMP.mqtt_password, mqtt_password) != 0 ||
+      CONFTMP.mqtt_port != mqtt_port ||
+      CONFTMP.coConstTempCutOff != coConstTempCutOff ||
+      CONFTMP.forceCObelow != forceCObelow  ||
+      CONFTMP.histereza != histereza ||
+      CONFTMP.forceWater != forceWater ||
+      CONFTMP.forceCO != forceCO) {  //skip save if runnumber = saved runnumber to avoid too much memory save and wear eeprom
+    EEPROM.put(1, runNumber);
+    //EEPROM.put(1+sizeof(runNumber), flame_used_power_kwh);
+    #ifdef debug1
+    Serial.println(String(millis())+": Saving config........................... to EEPROM some data changed");
+    #endif
+    #ifdef enableWebSerial
+    if (!starting) {WebSerial.println(String(millis())+": Saving config........................... to EEPROM some data changed");}
+    #endif
 
-  strcpy(CONFIGURATION.version,CONFIG_VERSION);
-  strcpy(CONFIGURATION.ssid,ssid);
-  strcpy(CONFIGURATION.pass,pass);
-  strcpy(CONFIGURATION.mqtt_server,mqtt_server);
-  strcpy(CONFIGURATION.mqtt_user,mqtt_user);
-  strcpy(CONFIGURATION.mqtt_password,mqtt_password);
-  CONFIGURATION.mqtt_port = mqtt_port;
-  CONFIGURATION.najpierwCO = najpierwCO;
-
-  for (unsigned int i=0; i<sizeof(configuration_type); i++)
-    EEPROM.write(CONFIG_START + i, *((char*)&CONFIGURATION + i));
-  EEPROM.commit();
+    strcpy(CONFIGURATION.version,CONFIG_VERSION);
+    strcpy(CONFIGURATION.ssid,ssid);
+    strcpy(CONFIGURATION.pass,pass);
+    strcpy(CONFIGURATION.mqtt_server,mqtt_server);
+    strcpy(CONFIGURATION.mqtt_user,mqtt_user);
+    strcpy(CONFIGURATION.mqtt_password,mqtt_password);
+    CONFIGURATION.mqtt_port = mqtt_port;
+    CONFIGURATION.najpierwCO = najpierwCO;
+    CONFIGURATION.coConstTempCutOff = coConstTempCutOff;
+    CONFIGURATION.forceCObelow = forceCObelow;
+    CONFIGURATION.histereza = histereza;
+    CONFIGURATION.forceWater = forceWater;
+    CONFIGURATION.forceCO = forceCO;
+    for (unsigned int i=0; i<sizeof(configuration_type); i++)
+      { EEPROM.write(CONFIG_START + i, *((char*)&CONFIGURATION + i)); }
+    EEPROM.commit();
+  }
 }
 
 void SaveEnergy() {
    // ------------------------ energy config save --------------
+  #ifdef debug1
   Serial.println("saving energy used");
-  EEPROM.put(1, runNumber);
-  EEPROM.put(1+sizeof(runNumber), energy1used);
-  EEPROM.put(1+sizeof(runNumber)+sizeof(energy1used), energy2used);
+  #endif
+  #ifdef enableWebSerial
+  if (!starting) {WebSerial.println("saving energy used");}
+  #endif
+  unsigned int temp = 0;
+  EEPROM.get(1,temp);
+  if (temp != runNumber ) {EEPROM.put(1, runNumber);}
+  double dtemp =0;
+  EEPROM.get(1+sizeof(runNumber),dtemp);
+  if (dtemp != energy1used) {EEPROM.put(1+sizeof(runNumber), energy1used);}
+  EEPROM.get(1+sizeof(runNumber)+sizeof(energy1used),dtemp);
+  if (dtemp != energy2used) {EEPROM.put(1+sizeof(runNumber)+sizeof(energy1used), energy2used);}
   EEPROM.commit();
   #ifdef debug
     Serial.println("config saved");
@@ -1136,40 +1195,44 @@ String getJsonVal(String json, String tofind)
 #ifdef enableWebSerial
 void recvMsg(uint8_t *data, size_t len)
 { // for WebSerial
-  WebSerial.println("Received Data...");
+  WebSerial.print(String(millis())+": ");
+  WebSerial.println(F("Received Data on WebSerial..."));
   String d = "";
-  for (int i = 0; i < len; i++)
+  for (size_t i = 0; i < len; i++)
   {
     d += char(data[i]);
   }
   d.toUpperCase();
   WebSerial.println("Received: " + String(d));
+
   if (d == "ON")
   {
     //  digitalWrite(LED, HIGH);
-  }
+  } else
   if (d == "OFF")
   {
     //  digitalWrite(LED, LOW);
-  }
+  } else
   if (d == "RESTART")
   {
+    WebSerial.print(String(millis())+": ");
     WebSerial.println(F("OK. Restarting... by command..."));
     restart();
-  }
+  } else
   if (d == "RECONNECT")
   {
     reconnect();
-  }
+  } else
   if (d == "SAVE")
   {
+    WebSerial.print(String(millis())+": ");
     WebSerial.println(F("Saving config to EEPROM memory by command..."));
     WebSerial.println("Size CONFIG: " + String(sizeof(CONFIGURATION)));
     SaveConfig();
-  }
-
+  } else
   if (d == "RESET_CONFIG")
   {
+    WebSerial.print(String(millis())+": ");
     WebSerial.println(F("RESET config to DEFAULT VALUES and restart..."));
     WebSerial.println("Size CONFIG: " + String(sizeof(CONFIGURATION)));
     CONFIGURATION.version[0] = 'R';
@@ -1179,10 +1242,70 @@ void recvMsg(uint8_t *data, size_t len)
     CONFIGURATION.version[4] = 'T';
     SaveConfig();
     restart();
-  }
-   if (d == "HELP")
+  } else
+  if (d.indexOf("FORCECOBELOW") !=- 1)
   {
-    WebSerial.println(F("KOMENDY: RESTART, RECONNECT, SAVE, RESET_CONFIG"));
+    String part = d.substring(d.indexOf(" "));
+    part.trim();
+    WebSerial.print(String(millis())+": ForceCOBelow: "+String(coConstTempCutOff));
+    if (d.indexOf(" ")!=-1) {
+      if (PayloadtoValidFloatCheck(part)) {forceCObelow = PayloadtoValidFloat(part,true,4,15);}
+      WebSerial.println(" -> ZMIENIONO NA: "+String(forceCObelow)+"    Payload: "+String(d));
+    } else { WebSerial.println("");}
+  } else
+  if (d.indexOf("COCUTOFFTEMP") !=- 1)
+  {
+    String part = d.substring(d.indexOf(" "));
+    part.trim();
+    WebSerial.print(String(millis())+": COCUTOFFTEMP: "+String(coConstTempCutOff));
+    if (d.indexOf(" ")!=-1) {
+      if (PayloadtoValidFloatCheck(part)) {coConstTempCutOff = PayloadtoValidFloat(part,true,20,40);}
+      WebSerial.println(" -> ZMIENIONO NA: "+String(coConstTempCutOff)+"    Payload: "+String(d));
+    } else { WebSerial.println("");}
+  } else
+  if (d.indexOf("HIST") !=- 1)
+  {
+    String part = d.substring(d.indexOf(" "));
+    part.trim();
+    WebSerial.print(String(millis())+": HISTEREZA: "+String(histereza));
+    if (d.indexOf(" ")!=-1) {
+      if (PayloadtoValidFloatCheck(part)) {histereza = PayloadtoValidFloat(part,true,-5,5);}
+      WebSerial.println(" -> ZMIENIONO NA: "+String(histereza)+"    Payload: "+String(d));
+    } else {WebSerial.println("");}
+  } else
+  if (d.indexOf("FORCECO") !=- 1)
+  {
+    String part = d.substring(d.indexOf(" "));
+    part.trim();
+    WebSerial.print(String(millis())+": ForceCO: "+String(forceCO?"ON":"OFF"));
+    if (d.indexOf(" ")!=-1) {
+      if (PayloadStatus(part,true)) {forceCO = true;} else if (PayloadStatus(part,false)) {forceCO = false;}
+      WebSerial.println(" -> ZMIENIONO NA: "+String(forceCO?"ON":"OFF")+"    Payload: "+String(d));
+    } else {WebSerial.println("");}
+  } else
+  if (d.indexOf("FORCEWATER") !=- 1)
+  {
+    String part = d.substring(d.indexOf(" "));
+    part.trim();
+    WebSerial.print(String(millis())+": ForceWater: "+String(forceWater?"ON":"OFF"));
+    if (d.indexOf(" ")!=-1) {
+      if (PayloadStatus(part,true)) {forceWater = true;} else if (PayloadStatus(part,false)) {forceWater = false;}
+      WebSerial.println(" -> ZMIENIONO NA: "+String(forceWater?"ON":"OFF")+"    Payload: "+String(d));
+    } else {WebSerial.println("");}
+  } else
+  if (d == "HELP")
+  {
+    WebSerial.print(String(millis())+": ");
+    WebSerial.println(F("KOMENDY:\n \
+      FORCECOBELOW xx  -Zmienia wartość xx 'wymusza pompe CO poniżej temperatury średniej zewnetrznej', \n \
+      COCUTOFFTEMP xx  -Zmienia wartość xx 'Temperatura graniczna na wymienniku oznacza ze piec sie grzeje',\n \
+      HIST xx          -Zmienia wartość xx histerezy progu grzania,\n \
+      ForceCO 0/1      -1(ON) -Wymusza grzanie CO 0(OFF) -deaktywuje,\n \
+      ForceWater 0/1   -1(ON) -Wymusza grzanie Wody 0(OFF) -deaktywuje,\n \
+      RESTART          -Uruchamia ponownie układ,\n \
+      RECONNECT        -Dokonuje ponownej próby połączenia z bazami,\n \
+      SAVE             -Wymusza zapis konfiguracji,\n \
+      RESET_CONFIG     -UWAGA!!!! Resetuje konfigurację do wartości domyślnych"));
   }
 }
 #endif
@@ -1224,6 +1347,7 @@ float PayloadtoValidFloat(String payloadStr, bool withtemps_minmax, float mintem
     Serial.println(F("Value is nmqttident a valid number, ignoring..."));
     #endif
     #ifdef enableWebSerial
+    WebSerial.print(String(millis())+": ");
     WebSerial.println(F("Value is nmqttident a valid number, ignoring..."));
     #endif
     return InitTemp;
@@ -1237,6 +1361,7 @@ float PayloadtoValidFloat(String payloadStr, bool withtemps_minmax, float mintem
       Serial.println("Value is valid number: "+String(valuefromStr,2));
       #endif
       #ifdef enableWebSerial
+      WebSerial.print(String(millis())+": ");
       WebSerial.println("Value is valid number: "+String(valuefromStr,2));
       #endif
       if (valuefromStr>maxtemp and maxtemp!=InitTemp) valuefromStr = maxtemp;

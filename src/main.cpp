@@ -658,25 +658,11 @@ void check_temps_pumps() {
   //  }
 
 #ifdef debug1
-    Serial.print(String(millis())+F(": CheckPumps: coTherm+histereza > Watertemp: "));
-    Serial.print(coTherm + histereza  > waterTherm );
-    Serial.print(F(", coTherm: "));
-    Serial.print(coTherm  );
-    Serial.print(F(" watertherm+histereza: "));
-    Serial.print( waterTherm + histereza);
-      Serial.print(F("uptime: "));
-      Serial.println(String((millis())/1000));
+    Serial.println(String(millis())+F(": CheckPumps: coTherm+histereza > Watertemp: ")+String(coTherm + histereza  > waterTherm)+F(", coTherm: ")+String(coTherm)+F(", watertherm+histereza: ")+String( waterTherm + histereza));
 //      if (((millis()-uptime) % 10000) == 0)  digitalWrite(relay1,!digitalRead(relay1)) ;
 #endif
 #ifdef enableWebSerial
-    WebSerial.print(String(millis())+F(": CheckPumps: coTherm+histereza > Watertemp: "));
-    WebSerial.print(coTherm + histereza  > waterTherm );
-    WebSerial.print(F(", coTherm: "));
-    WebSerial.print(coTherm  );
-    WebSerial.print(F(" watertherm+histereza: "));
-    WebSerial.print( waterTherm + histereza);
-      WebSerial.print(F("uptime: "));
-      WebSerial.println(String(millis()/1000));
+    WebSerial.println(String(millis())+F(": CheckPumps: coTherm+histereza > Watertemp: ")+String(coTherm + histereza  > waterTherm )+F(", coTherm: ")+String(coTherm)+F(", watertherm+histereza: ")+String(waterTherm + histereza));
 //      if (((millis()-uptime) % 10000) == 0)  digitalWrite(relay1,!digitalRead(relay1)) ;
 #endif
   if (isnan(coTherm) or isnan(waterTherm) or coTherm >= panic or coTherm < 1 ) {
@@ -726,7 +712,7 @@ void check_temps_pumps() {
         display.blink();
       forceCO=true;
     }
-    if (coTherm < (coConstTempCutOff + histereza) and panicbuz == false ) {
+    if (coTherm < (coConstTempCutOff - histereza) and panicbuz == false ) {
       //wylacz bo nic sie nie dzieje i temp pieca<30-histereza stopni
       prgstatusrelay1WO = LOW; //supla_and_relay_obsluga(pumpWaterRelay, LOW); //WyLACZ ZMIENILEM LOGIKE
       prgstatusrelay2CO = LOW; //supla_and_relay_obsluga(pumpCoRelay, LOW); //WyLACZ ZMIENILEM LOGIKE
@@ -747,7 +733,7 @@ void check_temps_pumps() {
       #ifdef enableWebSerial
       WebSerial.println(String(millis())+F(": Grzejemy się ;) -mamy temp w piecu"));
       #endif
-      if ((coTherm + histereza) > waterTherm) { //or (forceWater==true  and forceCO==false)) {
+      if ((coTherm + histereza) > waterTherm or forceWater == true) { //or (forceWater==true  and forceCO==false)) {
         #ifdef debug1
           Serial.println(String(millis())+F(": gdy temp pieca wieksza od wody -wlacz by zagrzac"));
         #endif //gdy temp pieca wieksza od wody -wlacz by zagrzac
@@ -757,8 +743,8 @@ void check_temps_pumps() {
         prgstatusrelay1WO = HIGH; //supla_and_relay_obsluga(pumpWaterRelay, HIGH);    //wlacz wode i wylacz co  //WLACZ ZMIENILEM LOGIKE
         prgstatusrelay2CO = LOW; //supla_and_relay_obsluga(pumpCoRelay, LOW);  //WYLACZ ZMIENILEM LOGIKE
     //    forceCO=false;
-      }
-      if (( coTherm - histereza) < waterTherm or najpierwCO == true) { //or forceCO == true) {  //and OutsideTempAvg < forceCObelow*1.05
+      } else
+      if ((( coTherm + histereza) < waterTherm  ) or najpierwCO == true) { //or forceCO == true) {  //and OutsideTempAvg < forceCObelow*1.05
         #ifdef debug1
           Serial.println(F("wlacz CO podlogowek gdy grzanie wody wylaczone "));
         #endif
@@ -768,21 +754,21 @@ void check_temps_pumps() {
         //wlacz CO podlogowek gdy grzanie wody wylaczone i srednia na zewnatrz temp <24stopni
         //oraz gdy temp CO<temp wody w baniaku
         prgstatusrelay1WO = LOW; //supla_and_relay_obsluga(pumpWaterRelay, LOW);  //WYLACZ ZMIENILEM LOGIKE
-        prgstatusrelay2CO = HIGH;
-      }
-      if (OutsideTempAvg > forceCObelow*1.05 ) { //and forceCO == true) {
-        #ifdef debug1
-          Serial.println(String(millis())+F(": Disable CO "));
-        #endif
-        #ifdef enableWebSerial
-        WebSerial.println(String(millis())+F(": Disable CO "));
-        #endif
-        prgstatusrelay2CO = LOW;
-      } else {
-        forceCO = true;
-        displayCoCo();
-      }
-      if (forceWater == true) {
+        if (OutsideTempAvg < forceCObelow) prgstatusrelay2CO = HIGH;   //ogranicz grzanie co gdy temp na zewnątrz <10
+      } else
+      // if (OutsideTempAvg > forceCObelow*1.05 ) { //and forceCO == true) {
+      //   #ifdef debug1
+      //     Serial.println(String(millis())+F(": Disable CO "));
+      //   #endif
+      //   #ifdef enableWebSerial
+      //   WebSerial.println(String(millis())+F(": Disable CO "));
+      //   #endif
+      //   prgstatusrelay2CO = LOW;
+      // } else {
+      //   forceCO = true;
+      //   displayCoCo();
+      // }
+      if (forceWater == true and coTherm < (coConstTempCutOff - histereza) and panicbuz == false) {
         #ifdef debug1
           Serial.println(String(millis())+F(": ForceWater "));
         #endif
@@ -790,9 +776,9 @@ void check_temps_pumps() {
         WebSerial.println(String(millis())+F(": ForceWater "));
         #endif
         prgstatusrelay1WO = HIGH; //supla_and_relay_obsluga(pumpWaterRelay, HIGH);    //wlacz wode i co  //WLACZ ZMIENILEM LOGIKE
-        prgstatusrelay2CO = LOW;
-      }
-      if (forceCO == true) {
+        if (forceCO == true) {prgstatusrelay2CO = HIGH;} else {prgstatusrelay2CO = LOW;}
+      } else
+      if (forceCO == true and coTherm < (coConstTempCutOff - histereza) and panicbuz == false) {
         #ifdef debug1
           Serial.println(String(millis())+F(": Force CO"));
         #endif
@@ -800,7 +786,7 @@ void check_temps_pumps() {
         WebSerial.println(String(millis())+F(": Force CO"));
         #endif
         prgstatusrelay2CO = HIGH; //supla_and_relay_obsluga(pumpCoRelay, HIGH);   //WLACZ ZMIENILEM LOGIKE
-        prgstatusrelay1WO = LOW;
+        if (forceWater == true) {prgstatusrelay1WO = HIGH;} else {prgstatusrelay1WO = LOW;}
       }
     }
   }

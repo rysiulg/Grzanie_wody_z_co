@@ -105,7 +105,9 @@ const String me_lokalizacja = "COWoda"+String(kondygnacja);//+"_mqqt_MARM";
 #define slashstr "/"
 #define update_path "/update"
 #define gas_leakage 250 //po tej wartosci alarm
-#define histereza 1     //po przekroczeniu o tyle stopni temp co w stosunku do wody włącz pompe
+#define histereza_def 1     //po przekroczeniu o tyle stopni temp co w stosunku do wody włącz pompe
+#define forceCObelow_def 12        //wymusza pompe CO poniżej temperatury średniej zewnetrznej
+#define coConstTempCutOff_def 28  //Temperatura graniczna na wymienniku oznacza ze piec sie grzeje
 #define last_case 6 //ilosc wyswietlen na display
 #define saveminut (15 * 60 * 1000) //how often in minutes save energy in LittleFS
 
@@ -133,8 +135,6 @@ const String me_lokalizacja = "COWoda"+String(kondygnacja);//+"_mqqt_MARM";
 #define dallThermometerS "ALL_Thermometer"
 #define dpump1energyS "pump1energyWO"
 #define dpump2energyS "pump2energyCO"
-#define forceCObelow 12        //wymusza pompe CO poniżej temperatury średniej zewnetrznej
-#define coConstTempCutOff 28  //Temperatura graniczna na wymienniku oznacza ze piec sie grzeje
 #define do_stopkawebsiteS "do_stopkawebsiteS"
 #define sensnamelen 32 //dlugosc nazwy czujnika temp 18b20
 #define gain_resolution GAIN_ONE
@@ -183,6 +183,9 @@ double energy1used,   //used energy
        coTherm,
        waterTherm,
        OutsideTempAvg,
+       histereza = histereza_def,
+       forceCObelow = forceCObelow_def,
+       coConstTempCutOff = coConstTempCutOff_def,
        waitCOStartingmargin; //dla opoznienia przez 1 godzine wymuszenia pompy co gdy nizsza temp CO niz startowa.
 
 const float panic = 70.0; //temperatura dla paniki -przekroczenia na piecu
@@ -395,7 +398,7 @@ String SUPLA_FREQ_TOPIC = "electricmain/supla/devices/zamel-mew-01-99a200/channe
 
 #include <EEPROM.h>
 
-#define CONFIG_VERSION "V00" sensitive_sizeS
+#define CONFIG_VERSION "V01" sensitive_sizeS
 
 // Where in EEPROM?
 #define CONFIG_START 1+sizeof(runNumber)+sizeof(energy1used)*2+16
@@ -410,6 +413,11 @@ typedef struct
   char mqtt_password[sensitive_size];
   int mqtt_port;
   bool najpierwCO;
+  bool forceWater;
+  bool forceCO;
+  double histereza;
+  double forceCObelow;
+  double coConstTempCutOff;
   // float roomtempset1;
   // float roomtempset2;
 
@@ -424,3 +432,4 @@ typedef struct
 
 // with DEFAULT values!
 configuration_type CONFIGURATION;
+configuration_type CONFTMP;
