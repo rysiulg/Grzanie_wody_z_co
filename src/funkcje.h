@@ -1247,50 +1247,50 @@ void recvMsg(uint8_t *data, size_t len)
   {
     String part = d.substring(d.indexOf(" "));
     part.trim();
-    WebSerial.print(String(millis())+": ForceCOBelow: "+String(coConstTempCutOff));
+    WebSerial.print(String(millis())+F(": ForceCOBelow: ")+String(forceCObelow)+F("   "));
     if (d.indexOf(" ")!=-1) {
       if (PayloadtoValidFloatCheck(part)) {forceCObelow = PayloadtoValidFloat(part,true,4,15);}
-      WebSerial.println(" -> ZMIENIONO NA: "+String(forceCObelow)+"    Payload: "+String(d));
+      WebSerial.println(F(" -> ZMIENIONO NA: ")+String(forceCObelow)+F("    Payload: ")+String(d));
     } else { WebSerial.println("");}
   } else
   if (d.indexOf("COCUTOFFTEMP") !=- 1)
   {
     String part = d.substring(d.indexOf(" "));
     part.trim();
-    WebSerial.print(String(millis())+": COCUTOFFTEMP: "+String(coConstTempCutOff));
+    WebSerial.print(String(millis())+F(": COCUTOFFTEMP: ")+String(coConstTempCutOff)+F("   "));
     if (d.indexOf(" ")!=-1) {
       if (PayloadtoValidFloatCheck(part)) {coConstTempCutOff = PayloadtoValidFloat(part,true,20,40);}
-      WebSerial.println(" -> ZMIENIONO NA: "+String(coConstTempCutOff)+"    Payload: "+String(d));
+      WebSerial.println(F(" -> ZMIENIONO NA: ")+String(coConstTempCutOff)+F("    Payload: ")+String(d));
     } else { WebSerial.println("");}
   } else
   if (d.indexOf("HIST") !=- 1)
   {
     String part = d.substring(d.indexOf(" "));
     part.trim();
-    WebSerial.print(String(millis())+": HISTEREZA: "+String(histereza));
+    WebSerial.print(String(millis())+F(": HISTEREZA: ")+String(histereza)+F("   "));
     if (d.indexOf(" ")!=-1) {
       if (PayloadtoValidFloatCheck(part)) {histereza = PayloadtoValidFloat(part,true,-5,5);}
-      WebSerial.println(" -> ZMIENIONO NA: "+String(histereza)+"    Payload: "+String(d));
+      WebSerial.println(F(" -> ZMIENIONO NA: ")+String(histereza)+F("    Payload: ")+String(d));
     } else {WebSerial.println("");}
   } else
   if (d.indexOf("FORCECO") !=- 1)
   {
     String part = d.substring(d.indexOf(" "));
     part.trim();
-    WebSerial.print(String(millis())+": ForceCO: "+String(forceCO?"ON":"OFF"));
+    WebSerial.print(String(millis())+F(": ForceCO: ")+String(forceCO?"ON":"OFF"));
     if (d.indexOf(" ")!=-1) {
       if (PayloadStatus(part,true)) {forceCO = true;} else if (PayloadStatus(part,false)) {forceCO = false;}
-      WebSerial.println(" -> ZMIENIONO NA: "+String(forceCO?"ON":"OFF")+"    Payload: "+String(d));
+      WebSerial.println(F(" -> ZMIENIONO NA: ")+String(forceCO?"ON":"OFF")+F("    Payload: ")+String(d));
     } else {WebSerial.println("");}
   } else
   if (d.indexOf("FORCEWATER") !=- 1)
   {
     String part = d.substring(d.indexOf(" "));
     part.trim();
-    WebSerial.print(String(millis())+": ForceWater: "+String(forceWater?"ON":"OFF"));
+    WebSerial.print(String(millis())+F(": ForceWater: ")+String(forceWater?"ON":"OFF"));
     if (d.indexOf(" ")!=-1) {
       if (PayloadStatus(part,true)) {forceWater = true;} else if (PayloadStatus(part,false)) {forceWater = false;}
-      WebSerial.println(" -> ZMIENIONO NA: "+String(forceWater?"ON":"OFF")+"    Payload: "+String(d));
+      WebSerial.println(F(" -> ZMIENIONO NA: ")+String(forceWater?"ON":"OFF")+F("    Payload: ")+String(d));
     } else {WebSerial.println("");}
   } else
   if (d == "HELP")
@@ -1702,13 +1702,13 @@ void updateInfluxDB()
   InfluxSensor.addField(mqttident + "CRT",  (runNumber));
   InfluxSensor.addField(mqttident + "uptime",  ((millis())/1000));   //w sekundach
 
-  InfluxSensor.addField(mqttident + String(BOILERROOM_TEMPERATURE), bmTemp);
+  if (bmTemp != InitTemp) {InfluxSensor.addField(mqttident + String(BOILERROOM_TEMPERATURE), bmTemp);}
   InfluxSensor.addField(mqttident + String(BOILERROOM_PRESSURE), dbmpressval);
   InfluxSensor.addField(mqttident + String(BOILERROOM_HIGH), bm_high);
   InfluxSensor.addField(mqttident + String(BOILERROOM_HIGHREAL), bm_high_real);
   InfluxSensor.addField(mqttident + String(BOILERROOM_COVAL), dcoval);
-  InfluxSensor.addField(mqttident + String(HEATERCO_TEMPERATURE), coTherm);
-  InfluxSensor.addField(mqttident + String(WATER_TEMPERATURE), waterTherm);
+  if (coTherm != InitTemp) {InfluxSensor.addField(mqttident + String(HEATERCO_TEMPERATURE), coTherm);}
+  if (waterTherm != InitTemp) {InfluxSensor.addField(mqttident + String(WATER_TEMPERATURE), waterTherm);}
   InfluxSensor.addField(mqttident + String(BOILERROOM_PUMP1WA), prgstatusrelay1WO?"1":"0");
   InfluxSensor.addField(mqttident + String(BOILERROOM_PUMP1WA_E), pump1energyS->getlast(energy_energyUsed));
   InfluxSensor.addField(mqttident + String(BOILERROOM_PUMP2CO_E), pump2energyS->getlast(energy_energyUsed));
@@ -1721,14 +1721,14 @@ void updateInfluxDB()
   InfluxSensor.addField(mqttident + String(BOILERROOM_PUMP1WA_E)+"_Power", pump1energyS->getlast(energy_power));
   InfluxSensor.addField(mqttident + String(BOILERROOM_PUMP2CO_E)+"_Power", pump2energyS->getlast(energy_power));
     InfluxSensor.addField(mqttident + String(BOILERROOM_PUMP2CO), prgstatusrelay2CO?"1":"0");
-  InfluxSensor.addField(mqttident + String(OUTSIDE_TEMPERATURE_N), NThermometerS->getlast());
-  InfluxSensor.addField(mqttident + String(OUTSIDE_TEMPERATURE_E), EThermometerS->getlast());
-  InfluxSensor.addField(mqttident + String(OUTSIDE_TEMPERATURE_W), WThermometerS->getlast());
-  InfluxSensor.addField(mqttident + String(OUTSIDE_TEMPERATURE_S), SThermometerS->getlast());
+  if (NThermometerS->getlast() != InitTemp) {InfluxSensor.addField(mqttident + String(OUTSIDE_TEMPERATURE_N), NThermometerS->getlast());}
+  if (EThermometerS->getlast() != InitTemp) {InfluxSensor.addField(mqttident + String(OUTSIDE_TEMPERATURE_E), EThermometerS->getlast());}
+  if (WThermometerS->getlast() != InitTemp) {InfluxSensor.addField(mqttident + String(OUTSIDE_TEMPERATURE_W), WThermometerS->getlast());}
+  if (SThermometerS->getlast() != InitTemp) {InfluxSensor.addField(mqttident + String(OUTSIDE_TEMPERATURE_S), SThermometerS->getlast());}
   #ifdef newSensorT1
   InfluxSensor.addField(mqttident + String(BOILERROOM_TEMPERATURE_T1), T1ThermometerS->getlast());
   #endif
-  InfluxSensor.addField(mqttident + String(OUTSIDE_TEMPERATURE_A), OutsideTempAvg);
+  if (OutsideTempAvg != InitTemp) {InfluxSensor.addField(mqttident + String(OUTSIDE_TEMPERATURE_A), OutsideTempAvg);}
 
 
   // InfluxSensor.addField(String(TEMP_CUTOFF)+String(kondygnacja), cutOffTemp);
@@ -1787,17 +1787,17 @@ void updateMQTTData() {
   tmpbuilder += F(",\"CRT\":")+ String(runNumber);
   tmpbuilder += F(",\"uptime\":")+ String((millis())/1000);   //w sekundach
 
-  tmpbuilder += F(",\"") + mqttident + OUTSIDE_TEMPERATURE_N + F("\": ") + payloadvalue_startend_val + String(NThermometerS->getlast()) + payloadvalue_startend_val;
-  tmpbuilder += F(",\"") + mqttident + OUTSIDE_TEMPERATURE_E + F("\": ") + payloadvalue_startend_val + String(EThermometerS->getlast()) + payloadvalue_startend_val;
-  tmpbuilder += F(",\"") + mqttident + OUTSIDE_TEMPERATURE_W + F("\": ") + payloadvalue_startend_val + String(WThermometerS->getlast()) + payloadvalue_startend_val;
-  tmpbuilder += F(",\"") + mqttident + OUTSIDE_TEMPERATURE_S + F("\": ") + payloadvalue_startend_val + String(SThermometerS->getlast()) + payloadvalue_startend_val;
-  tmpbuilder += F(",\"") + mqttident + OUTSIDE_TEMPERATURE_A + F("\": ") + payloadvalue_startend_val + String(OutsideTempAvg) + payloadvalue_startend_val;
+  if (NThermometerS->getlast() != InitTemp) {tmpbuilder += F(",\"") + mqttident + OUTSIDE_TEMPERATURE_N + F("\": ") + payloadvalue_startend_val + String(NThermometerS->getlast()) + payloadvalue_startend_val;}
+  if (EThermometerS->getlast() != InitTemp) {tmpbuilder += F(",\"") + mqttident + OUTSIDE_TEMPERATURE_E + F("\": ") + payloadvalue_startend_val + String(EThermometerS->getlast()) + payloadvalue_startend_val;}
+  if (WThermometerS->getlast() != InitTemp) {tmpbuilder += F(",\"") + mqttident + OUTSIDE_TEMPERATURE_W + F("\": ") + payloadvalue_startend_val + String(WThermometerS->getlast()) + payloadvalue_startend_val;}
+  if (SThermometerS->getlast() != InitTemp) {tmpbuilder += F(",\"") + mqttident + OUTSIDE_TEMPERATURE_S + F("\": ") + payloadvalue_startend_val + String(SThermometerS->getlast()) + payloadvalue_startend_val;}
+  if (OutsideTempAvg != InitTemp) {tmpbuilder += F(",\"") + mqttident + OUTSIDE_TEMPERATURE_A + F("\": ") + payloadvalue_startend_val + String(OutsideTempAvg) + payloadvalue_startend_val;}
   #ifdef newSensorT1
   tmpbuilder += F(",\"") + mqttident + BOILERROOM_TEMPERATURE_T1 + F("\": ") + payloadvalue_startend_val + String(T1ThermometerS->getlast()) + payloadvalue_startend_val;
   #endif
-  tmpbuilder += F(",\"") + mqttident + HEATERCO_TEMPERATURE + F("\": ") + payloadvalue_startend_val + String(coTherm) + payloadvalue_startend_val;
-  tmpbuilder += F(",\"") + mqttident + WATER_TEMPERATURE + F("\": ") + payloadvalue_startend_val + String(waterTherm) + payloadvalue_startend_val;
-  tmpbuilder += F(",\"") + mqttident + BOILERROOM_TEMPERATURE + F("\": ") + payloadvalue_startend_val + String(bmTemp) + payloadvalue_startend_val;
+  if (coTherm != InitTemp) {tmpbuilder += F(",\"") + mqttident + HEATERCO_TEMPERATURE + F("\": ") + payloadvalue_startend_val + String(coTherm) + payloadvalue_startend_val;}
+  if (waterTherm != InitTemp) {tmpbuilder += F(",\"") + mqttident + WATER_TEMPERATURE + F("\": ") + payloadvalue_startend_val + String(waterTherm) + payloadvalue_startend_val;}
+  if (bmTemp != InitTemp) {tmpbuilder += F(",\"") + mqttident + BOILERROOM_TEMPERATURE + F("\": ") + payloadvalue_startend_val + String(bmTemp) + payloadvalue_startend_val;}
   tmpbuilder += F(",\"") + mqttident + BOILERROOM_PRESSURE + F("\": ") + payloadvalue_startend_val + String(dbmpressval) + payloadvalue_startend_val;
   tmpbuilder += F(",\"") + mqttident + BOILERROOM_HIGH + F("\": ") + payloadvalue_startend_val + String(bm_high) + payloadvalue_startend_val;
   tmpbuilder += F(",\"") + mqttident + BOILERROOM_HIGHREAL + F("\": ") + payloadvalue_startend_val + String(bm_high_real) + payloadvalue_startend_val;

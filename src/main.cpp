@@ -65,7 +65,7 @@ HAM::Sensor::DS18B20 *T1ThermometerS;// (dT1ThermometerS); // "temp" is unique I
 
 void setup() {
   #if defined (debug) or defined (debug1)
-  Serial.begin(115200);
+  Serial.begin(74880);
   Serial.print("\nStarting Async_AutoConnect_ESP8266_minimal on " + String(ARDUINO_BOARD)+String("  "));
   #ifdef enableWifiManager
   Serial.println(ESP_ASYNC_WIFIMANAGER_VERSION);
