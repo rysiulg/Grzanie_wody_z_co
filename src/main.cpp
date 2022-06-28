@@ -110,11 +110,7 @@ void check_wifi()
     { // this should start only when softap is down or else it will not work properly so run after the routine to disable softap
       firstConnectSinceBoot = false;
       lastmqtt_reconnect = 0; // initiate mqtt connection asap
-      #ifdef enableArduinoOTA
-      setupOTA();
-      #endif
-      MDNS.begin(me_lokalizacja.c_str());
-      MDNS.addService("http", "tcp", 80);
+
 
       if (ssid[0] == '\0')
       {
@@ -295,6 +291,11 @@ void setup()
 #endif
   dnsServer.setErrorReplyCode(DNSReplyCode::NoError);
   dnsServer.start(53, "*", WiFi.localIP());
+  #ifdef enableArduinoOTA
+  setupOTA();
+  #endif
+  MDNS.begin(me_lokalizacja.c_str());
+  MDNS.addService("http", "tcp", 80);
   uptime = millis();
 }
 
@@ -329,7 +330,8 @@ void ReadEnergyUsed()
     if (isnan(lastEnergyAmpValue)) lastEnergyAmpValue = 0;
     pump2energyLast = lastEnergyAmpValue;                   //to check if pump is running
     energy2used += getkWh(lastEnergyAmpValue);
-    Serial.println("energy readed: 1: "+String(energy1used,4)+"  2: "+String(energy2used,4));
+    sprintf(log_chars,"energy readed: 1: %s  2: %s",String(energy1used,4).c_str(),String(energy2used,4).c_str());
+    log_message(log_chars);
   }
 }
 
@@ -360,14 +362,16 @@ void ReadTemperatures()
     {
       temp1w = sensors.getTempCByIndex(j);
       if (temp1w == DS18B20nodata or temp1w == DS18B20nodata2 or temp1w == DS18B20nodata3 or temp1w == DS18B20nodata4 or temp1w == InitTemp)
-        temp1w = InitTemp;
+        { temp1w = InitTemp; }
       addrstr = "";
       sensors.getAddress(addr, j);
       for (int i1 = 0; i1 < 8; i1++)
-        if (String(addr[i1], HEX).length() == 1)
+      {
+      if (String(addr[i1], HEX).length() == 1) {
           addrstr += "0" + String(addr[i1], HEX);
-        else
+      } else {
           addrstr += String(addr[i1], HEX); // konwersja HEX2StringHEX
+      }}
       // zapisanie do zmiennej addr[8], addrstr, aktualiozacja index wskazany przez j i aktualozacja temp1w.
       addrstr.trim();
       addrstr.toUpperCase();
@@ -376,17 +380,17 @@ void ReadTemperatures()
       String addstrtmp = String(DallSens1_addr); addstrtmp.toUpperCase(); addstrtmp.trim();
       if (addrstr == addstrtmp) { if (temp1w != InitTemp) coTherm = temp1w; assignedsensor = true; }
       addstrtmp = String(DallSens2_addr); addstrtmp.toUpperCase(); addstrtmp.trim();
-      if (addrstr == addstrtmp) { if (temp1w != InitTemp) waterTherm = temp1w; assignedsensor = true; break; }
+      if (addrstr == addstrtmp) { if (temp1w != InitTemp) waterTherm = temp1w; assignedsensor = true; }
       addstrtmp = String(DallSens3_addr); addstrtmp.toUpperCase(); addstrtmp.trim();
-      if (addrstr == addstrtmp) { if (temp1w != InitTemp) NTherm = temp1w; assignedsensor = true; break; }
+      if (addrstr == addstrtmp) { if (temp1w != InitTemp) NTherm = temp1w; assignedsensor = true; }
       addstrtmp = String(DallSens4_addr); addstrtmp.toUpperCase(); addstrtmp.trim();
-      if (addrstr == addstrtmp) { if (temp1w != InitTemp) WTherm = temp1w; assignedsensor = true; break; }
+      if (addrstr == addstrtmp) { if (temp1w != InitTemp) WTherm = temp1w; assignedsensor = true; }
       addstrtmp = String(DallSens5_addr); addstrtmp.toUpperCase(); addstrtmp.trim();
-      if (addrstr == addstrtmp) { if (temp1w != InitTemp) ETherm = temp1w; assignedsensor = true; break; }
+      if (addrstr == addstrtmp) { if (temp1w != InitTemp) ETherm = temp1w; assignedsensor = true; }
       addstrtmp = String(DallSens6_addr); addstrtmp.toUpperCase(); addstrtmp.trim();
-      if (addrstr == addstrtmp) { if (temp1w != InitTemp) STherm = temp1w; assignedsensor = true; break; }
+      if (addrstr == addstrtmp) { if (temp1w != InitTemp) STherm = temp1w; assignedsensor = true; }
 
-      if (!assignedsensor and UnassignedTempSensor.indexOf(addrstr) == -1 and temp1w != InitTemp) UnassignedTempSensor += String(addrstr) + " : " + String(temp1w) + "\n";
+      if (!assignedsensor and UnassignedTempSensor.indexOf(addrstr) == -1 and temp1w != InitTemp) UnassignedTempSensor += String(addrstr) + " : " + String(temp1w) + "\n";  //
       assignedsensor = false;
       if (temp1w != InitTemp) temptmp += "       " + String(j) + ": 18B20 ROM= " + addrstr + ", temp: " + String(temp1w, 2) + "\n";
     }
@@ -545,6 +549,8 @@ void loop()
 
     String stats = F("{\"uptime\":");
     stats += String(millis());
+    stats += F(",\"version\":");
+    stats += me_version;
     stats += F(",\"voltage\":");
     stats += 0;
     stats += F(",\"free memory\":");

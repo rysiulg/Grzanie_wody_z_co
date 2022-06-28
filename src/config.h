@@ -23,7 +23,7 @@
 #define kondygnacja 0
 const uint8_t subpomieszczenie = 10;
 //#define newSensorT1 //dodatkowy sesnor
-const String me_lokalizacja = "COWoda_"+String(kondygnacja);//+"_mqqt_MARM";
+const String me_lokalizacja = "COWoda"+String(kondygnacja);//+"_mqqt_MARM";
 #define ATOMIC_FS_UPDATE
 #define MFG "MARM.pl Sp. z o.o."
 #define wwwport 80
@@ -130,7 +130,7 @@ const String me_lokalizacja = "COWoda_"+String(kondygnacja);//+"_mqqt_MARM";
 #define  dpump2 "pump2CO"  //CO
 #define pumpCoRelay 2
 #define  dcoThermstat  "co_Thermstat"
-#define uptimelink "uptimelink"
+#define uptimelink "uptime"
 #define jsonlink "jsonlink"
 #define dwaterThermstat  "water_Thermstat"
 #define dNThermometerS  "N_Thermometer"
@@ -156,6 +156,7 @@ const String me_lokalizacja = "COWoda_"+String(kondygnacja);//+"_mqqt_MARM";
 
 bool forceCO = false,
      forceWater = false,
+     sendlogtomqtt = false,
      receivedmqttdata = false,
      isadslinitialised = false,
      shouldSaveConfig = false,
@@ -173,12 +174,12 @@ bool forceCO = false,
 
 char WSSID[31],
      WPass[51],
-     coThermometer[]      = "28ff6872801402C1",
-     waterThermometer[]   = "28ff9C6b801402d3",
-     sens2[]="28FFB66980140291",
-     sens3[]="28FF78668014028B",
-     sens4[]="28ffc6258014020e",
-     sens5[]="28FF4B7280140277",
+    //  coThermometer[]      = "28ff6872801402C1",
+    //  waterThermometer[]   = "28ff9C6b801402d3",
+    //  sens2[]="28FFB66980140291",
+    //  sens3[]="28FF78668014028B",
+    //  sens4[]="28ffc6258014020e",
+    //  sens5[]="28FF4B7280140277",
      ssid[sensitive_size] = SSID_Name,
      pass[sensitive_size] = SSID_PAssword,
      mqtt_server[sensitive_size*2] = MQTT_servername,   // Your MQTT broker address and credentials

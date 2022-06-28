@@ -9,7 +9,7 @@
 
 
 //***********************************************************************************************************************************************************************************************
-void log_message(char* string)  //         log_message((char *)"WiFi lost, but softAP station connecting, so stop trying to connect to configured ssid...");
+void log_message(char* string, u_int specialforce)  //         log_message((char *)"WiFi lost, but softAP station connecting, so stop trying to connect to configured ssid...");
 {
 //  #include "configmqtttopics.h"
   String send_string = String(millis()) + F(": ") + String(string);
@@ -22,7 +22,7 @@ void log_message(char* string)  //         log_message((char *)"WiFi lost, but s
 //   if (webSocket.connectedClients() > 0) {
 //     webSocket.broadcastTXT(string, strlen(string));
 //   }
-  if (mqttclient.connected())
+  if (mqttclient.connected() and (sendlogtomqtt or (specialforce % 2) == 1))
   {
     if(send_string.length() > 2) send_string[100] = '\0';
     if (!mqttclient.publish(LOG_TOPIC.c_str(), send_string.c_str())) {
@@ -229,16 +229,16 @@ float PayloadtoValidFloat(String payloadStr, bool withtemps_minmax, float mintem
   {
     if (!withtemps_minmax)
     {
-      sprintf(log_chars, "Value is valid number without minmax: %s", String(valuefromStr,2).c_str());
-      log_message(log_chars);
-      return valuefromStr;
+      // sprintf(log_chars, "Value is valid number without minmax: %s", String(valuefromStr,2).c_str());
+      // log_message(log_chars);
+      // return valuefromStr;
     } else {
       if (valuefromStr>maxtemp and maxtemp!=InitTemp) valuefromStr = maxtemp;
       if (valuefromStr<mintemp and mintemp!=InitTemp) valuefromStr = mintemp;
-      sprintf(log_chars, "Value is valid number: %s", String(valuefromStr,2).c_str());
-      log_message(log_chars);
-      return valuefromStr;
     }
+    sprintf(log_chars, "Value is valid number: %s", String(valuefromStr,2).c_str());
+    log_message(log_chars);
+    return valuefromStr;
   }
 }
 
@@ -296,17 +296,23 @@ void setupOTA() {
   ArduinoOTA.setHostname(me_lokalizacja.c_str());
 
   // Set authentication
-  ArduinoOTA.setPassword("admin");
+  //ArduinoOTA.setPassword("admin");
 
   ArduinoOTA.onStart([]() {
     log_message((char*)F("Starting update by OTA"));
   });
   ArduinoOTA.onEnd([]() {
-    log_message((char*)F("Finished update by OTA"));
+    log_message((char*)F("Finished update by OTA"),1);
+    delay(2000);
+    restart();
+
   });
   ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
-    sprintf(log_chars,"Update in progress %s/%s",String(progress).c_str(),String(total).c_str());
-    log_message(log_chars);
+    if ((int)(progress/total) % 5 == 0)
+    {
+      sprintf(log_chars,"Update in progress %s/%s",String(progress).c_str(),String(total).c_str());
+      log_message(log_chars);
+    }
   });
   ArduinoOTA.onError([](ota_error_t error) {
     sprintf(log_chars,"There is error upgradeing by OTA: %s",String(error).c_str());

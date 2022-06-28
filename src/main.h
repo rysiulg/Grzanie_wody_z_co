@@ -199,7 +199,7 @@ float           Ro           =  10; //18.07; //po kalibracji 10;                
 
 
 //common_functions.h
-void log_message(char* string);
+void log_message(char* string, u_int specialforce = 0);
 String uptimedana(unsigned long started_local);
 String getJsonVal(String json, String tofind);
 bool isValidNumber(String str);

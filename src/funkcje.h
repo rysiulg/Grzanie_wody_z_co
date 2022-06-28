@@ -376,11 +376,11 @@ String processor(const String var) {
     String ptr =F("\0");
     ptr=F("<form action=\"/get\"><table>");
 //    ptr+="<table>";
-    ptr+=F("<p>")+tempicon+F("<span class=\"dht-labels\">")+String(Temp_NEWS)+F("</span><B><span class=\"dht-labels-temp\" id=\"")+String(dallThermometerS)+F("\">&nbsp;<font color=\"Green\">")+String(OutsideTempAvg)+F("</font></span><sup class=\"units\">&deg;C</sup></B></p>");
+    ptr+=F("<p>")+tempicon+F("<span class=\"dht-labels\">")+String(Temp_NEWS)+F("</span><B><span class=\"dht-labels-temp\" id=\"")+String(dallThermometerS)+F("\">&nbsp;<font color=\"Green\">")+(OutsideTempAvg==InitTemp?"--.-":String(OutsideTempAvg))+F("</font></span><sup class=\"units\">&deg;C</sup></B></p>");
     ptr+=F("<tr><td>");
-    ptr+=F("<p>")+tempicon+F("<span class=\"dht-labels\">")+String(Temp_COHeat)+F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String(dcoThermstat)+F("\">&nbsp;<font color=\"Blue\">")+String(coTherm,1)+F("</font></span><sup class=\"units\">&deg;C</sup></B></p>");
+    ptr+=F("<p>")+tempicon+F("<span class=\"dht-labels\">")+String(Temp_COHeat)+F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String(dcoThermstat)+F("\">&nbsp;<font color=\"Blue\">")+(coTherm==InitTemp?"--.-":String(coTherm,1))+F("</font></span><sup class=\"units\">&deg;C</sup></B></p>");
     ptr+=F("<td></td");
-    ptr+=F("<p>")+tempicon+F("<span class=\"dht-labels\">")+String(Temp_WaterCOHeat)+F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String(dwaterThermstat)+F("\">&nbsp;<font color=\"blue\">")+String(waterTherm,1)+F("</font></span><sup class=\"units\">&deg;C</sup></B></p>");
+    ptr+=F("<p>")+tempicon+F("<span class=\"dht-labels\">")+String(Temp_WaterCOHeat)+F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String(dwaterThermstat)+F("\">&nbsp;<font color=\"blue\">")+(waterTherm==InitTemp?"--.-":String(waterTherm,1))+F("</font></span><sup class=\"units\">&deg;C</sup></B></p>");
     ptr+=F("</td></tr>");
     ptr+=F("<tr><td>");
     ptr+="<p>"+ppmicon+F("<span class=\"dht-labels\">")+String(pump)+F(" 1 ")+String(CO_heat)+F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String(dpump1)+F("\">&nbsp;")+String(getpumpstatus(1))+F("</span><sup class=\"units\"> </sup></B></p>");
@@ -404,23 +404,23 @@ if (var == "bodywstaw1") {
     ptr+=F("</td></tr>");
     ptr+=F("<tr><td>");
     //if (NTherm<-100 or NTherm>100) wart="-.--"; else wart=String(NTherm);
-    ptr+=F("<p>")+tempicon+F("<span class=\"dht-labels\">")+String(Temp_N)+F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String(dNThermometerS)+F("\">&nbsp;")+String(NTherm,1)+F("</span><sup class=\"units\">&deg;C</sup></B></p>");
+    ptr+=F("<p>")+tempicon+F("<span class=\"dht-labels\">")+String(Temp_N)+F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String(dNThermometerS)+F("\">&nbsp;")+(NTherm==InitTemp?"--.-":String(NTherm,1))+F("</span><sup class=\"units\">&deg;C</sup></B></p>");
     ptr+=F("</td><td>");
     //if (ETherm<-100 or ETherm>100) wart="-.--"; else wart=String(ETherm);
-    ptr+="<p>"+tempicon+F("<span class=\"dht-labels\">")+String(Temp_E)+F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String(dEThermometerS)+F("\">&nbsp;")+String(ETherm,1)+F("</span><sup class=\"units\">&deg;C</sup></B></p>");
+    ptr+="<p>"+tempicon+F("<span class=\"dht-labels\">")+String(Temp_E)+F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String(dEThermometerS)+F("\">&nbsp;")+(ETherm==InitTemp?"--.-":String(ETherm,1))+F("</span><sup class=\"units\">&deg;C</sup></B></p>");
     ptr+=F("</td></tr><tr><td>");
     return ptr;
   }
 if (var == "bodywstaw2") {
     String ptr =F("\0");
     //if (WTherm<-100 or WTherm>100) wart="-.--"; else wart=String(WTherm);
-    ptr+=F("<p>")+tempicon+F("<span class=\"dht-labels\">")+String(Temp_W)+F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String(dWThermometerS)+F("\">&nbsp;")+String(WTherm,1)+F("</span><sup class=\"units\">&deg;C</sup></B></p>");
+    ptr+=F("<p>")+tempicon+F("<span class=\"dht-labels\">")+String(Temp_W)+F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String(dWThermometerS)+F("\">&nbsp;")+(WTherm==InitTemp?"--.-":String(WTherm,1))+F("</span><sup class=\"units\">&deg;C</sup></B></p>");
     ptr+=F("</td><td>");
     //if (STherm<-100 or STherm>100) wart="-.--"; else wart=String(ETherm);
-    ptr+=F("<p>")+tempicon+F("<span class=\"dht-labels\">")+String(Temp_S)+F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String(dSThermometerS)+F("\">&nbsp;")+String(STherm,1)+F("</span><sup class=\"units\">&deg;C</sup></B></p>");
+    ptr+=F("<p>")+tempicon+F("<span class=\"dht-labels\">")+String(Temp_S)+F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String(dSThermometerS)+F("\">&nbsp;")+(STherm==InitTemp?"--.-":String(STherm,1))+F("</span><sup class=\"units\">&deg;C</sup></B></p>");
     ptr+=F("</td></tr>");
     ptr+=F("<tr><td>");
-    ptr+=F("<p>")+tempicon+F("<span class=\"dht-labels\">")+String(Temp_BoilerRoom)+F("</span><B><span class=\"dht-labels-temp\" id=\"")+String(dbmtemperature)+F("\">&nbsp;")+String(bmTemp,1)+F("</span><sup class=\"units\">&deg;C</sup></B></p>");
+    ptr+=F("<p>")+tempicon+F("<span class=\"dht-labels\">")+String(Temp_BoilerRoom)+F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String(dbmtemperature)+F("\">&nbsp;")+String(bmTemp,1)+F("</span><sup class=\"units\">&deg;C</sup></B></p>");
     ptr+=F("</td></tr>");
     ptr+=F("</table></form>");
     #ifdef debug1
@@ -523,10 +523,10 @@ void starthttpserver() {
     request->send(200, "text/plain; charset=utf-8", String(dcoval));
   }).setAuthentication("", "");
   webserver.on(slashstr dcoThermstat, HTTP_GET, [](AsyncWebServerRequest * request) {
-    request->send(200, "text/plain; charset=utf-8", String(F("<font color=\"Blue\">"))+String(coTherm,1)+String(+F("<font>"))); //dcoThermstatometerS->getlast());
+    request->send(200, "text/plain; charset=utf-8", String(F("<font color=\"Blue\">"))+(coTherm==InitTemp?"--.-":String(coTherm,1))+String(+F("<font>"))); //dcoThermstatometerS->getlast());
   }).setAuthentication("", "");
   webserver.on(slashstr dwaterThermstat, HTTP_GET, [](AsyncWebServerRequest * request) {
-    request->send(200, "text/plain; charset=utf-8", String(F("<font color=\"Blue\">"))+String(waterTherm,1)+String(+F("<font>")));
+    request->send(200, "text/plain; charset=utf-8", String(F("<font color=\"Blue\">"))+(waterTherm==InitTemp?"--.-":String(waterTherm,1))+String(+F("<font>")));
   }).setAuthentication("", "");
   webserver.on(slashstr dpump1, HTTP_GET, [](AsyncWebServerRequest * request) {
     request->send(200, "text/plain; charset=utf-8", String(getpumpstatus(1)));
@@ -535,19 +535,19 @@ void starthttpserver() {
     request->send(200, "text/plain; charset=utf-8", String(getpumpstatus(2)));
   }).setAuthentication("", "");
   webserver.on(slashstr dNThermometerS, HTTP_GET, [](AsyncWebServerRequest * request) {
-    request->send(200, "text/plain; charset=utf-8", String(NTherm,1));
+    request->send(200, "text/plain; charset=utf-8", (NTherm==InitTemp?"--.-":String(NTherm,1)));
   }).setAuthentication("", "");
   webserver.on(slashstr dWThermometerS, HTTP_GET, [](AsyncWebServerRequest * request) {
-    request->send(200, "text/plain; charset=utf-8", String(WTherm,1));
+    request->send(200, "text/plain; charset=utf-8", (WTherm==InitTemp?"--.-":String(WTherm,1)));
   });
   webserver.on(slashstr dEThermometerS, HTTP_GET, [](AsyncWebServerRequest * request) {
-    request->send(200, "text/plain; charset=utf-8", String(ETherm,1));
+    request->send(200, "text/plain; charset=utf-8", (ETherm==InitTemp?"--.-":String(ETherm,1)));
   }).setAuthentication("", "");
   webserver.on(slashstr dSThermometerS, HTTP_GET, [](AsyncWebServerRequest * request) {
-    request->send(200, "text/plain; charset=utf-8", String(STherm,1));
+    request->send(200, "text/plain; charset=utf-8", (STherm==InitTemp?"--.-":String(STherm,1)));
   });
   webserver.on(slashstr dallThermometerS, HTTP_GET, [](AsyncWebServerRequest * request) {
-    request->send(200, "text/plain; charset=utf-8", String(F("<font color=\"Green\">"))+String(OutsideTempAvg)+String(+F("<font>")));
+    request->send(200, "text/plain; charset=utf-8", String(F("<font color=\"Green\">"))+(OutsideTempAvg==InitTemp?"--.-":String(OutsideTempAvg))+String(+F("<font>")));
   }).setAuthentication("", "");
   webserver.on(slashstr do_stopkawebsiteS , HTTP_GET, [](AsyncWebServerRequest * request) {
     request->send(200, "text/html; charset=utf-8", String(do_stopkawebsite()));
@@ -1112,6 +1112,16 @@ void recvMsg(uint8_t *data, size_t len)
       WebSerial.println(F(" -> ZMIENIONO NA: ")+String(forceWater?"ON":"OFF")+F("    Payload: ")+String(d));
     } else {WebSerial.println("");}
   } else
+  if (d.indexOf("LOG2MQTT") !=- 1)
+  {
+    String part = d.substring(d.indexOf(" "));
+    part.trim();
+    WebSerial.print(String(millis())+F(": LOG2MQTT: ")+String(sendlogtomqtt?"ON":"OFF"));
+    if (d.indexOf(" ")!=-1) {
+      if (PayloadStatus(part,true)) {sendlogtomqtt = true;} else if (PayloadStatus(part,false)) {sendlogtomqtt = false;}
+      WebSerial.println(F(" -> ZMIENIONO NA: ")+String(sendlogtomqtt?"ON":"OFF")+F("    Payload: ")+String(d));
+    } else {WebSerial.println("");}
+  }else
   if (d == "HELP")
   {
     WebSerial.print(String(millis())+": ");
@@ -1121,11 +1131,14 @@ void recvMsg(uint8_t *data, size_t len)
       HIST xx          -Zmienia wartość xx histerezy progu grzania,\n \
       ForceCO 0/1      -1(ON) -Wymusza grzanie CO 0(OFF) -deaktywuje,\n \
       ForceWater 0/1   -1(ON) -Wymusza grzanie Wody 0(OFF) -deaktywuje,\n \
+      LOG2MQTT         -1(ON) wysyla log do MQTT 0 wylacza,\n \
       RESTART          -Uruchamia ponownie układ,\n \
       RECONNECT        -Dokonuje ponownej próby połączenia z bazami,\n \
       SAVE             -Wymusza zapis konfiguracji,\n \
       RESET_CONFIG     -UWAGA!!!! Resetuje konfigurację do wartości domyślnych"));
   }
+
+
 }
 #endif
 
