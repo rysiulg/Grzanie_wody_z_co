@@ -188,7 +188,7 @@ char WSSID[31],
 
 char log_chars[256];
 
-const double pumpmincurrent = 0.010; //minimalna wartosc pradu dla okreslenia czy pompa chodzi
+const double pumpmincurrent = 0.0005; //minimalna wartosc pradu dla okreslenia czy pompa chodzi 0,0005 means 0,1W
 
 double energy1used,   //used energy
        energy2used,
