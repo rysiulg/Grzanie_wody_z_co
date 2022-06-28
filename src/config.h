@@ -11,15 +11,19 @@
 
 // v.2.0 Initial after move from Arduino Mega to ESP32
 
-//#define debug		//Serial Debug
+#define debug		//Serial Debug
 #define debug1
 
+#define enableArduinoOTA
+//#define wdtreset
+
+//     https://maximeborges.github.io/esp-stacktrace-decoder/
 
 
 #define kondygnacja 0
 const uint8_t subpomieszczenie = 10;
 //#define newSensorT1 //dodatkowy sesnor
-const String me_lokalizacja = "COWoda"+String(kondygnacja);//+"_mqqt_MARM";
+const String me_lokalizacja = "COWoda_"+String(kondygnacja);//+"_mqqt_MARM";
 #define ATOMIC_FS_UPDATE
 #define MFG "MARM.pl Sp. z o.o."
 #define wwwport 80
@@ -70,8 +74,12 @@ const String me_lokalizacja = "COWoda"+String(kondygnacja);//+"_mqqt_MARM";
 #define InfluxMeasurments "MARMpl_Measurments"
 #endif
 
-#define InitTemp -127.00
-#define maxsensors 13            //maksymalna liczba czujnikow w tabeli
+#define InitTemp -255
+#define DS18B20nodata 255
+#define DS18B20nodata2 85
+#define DS18B20nodata3 -127
+#define DS18B20nodata4 -85
+#define maxsensors 7            //maksymalna liczba czujnikow w tabeli
 #define namelength 15 //ilosc znakow z nazwy czunika
 
 // Your WiFi credentials.
@@ -95,10 +103,10 @@ const String me_lokalizacja = "COWoda"+String(kondygnacja);//+"_mqqt_MARM";
 #define ONE_WIRE_BUS D7
 #define wificonfig_pin D8 //D8 // D3 do wyzwolenia config
 #define gas_ain A0
-#define ads_0 "0"
-#define ads_1 "1"
-#define ads_2 "2"
-#define ads_3 "3"
+#define ads_0 0
+#define ads_1 1
+#define ads_2 2
+#define ads_3 3
 //*************************************************
 //#define update_username "admin"
 //#define update_password "admin"
@@ -111,7 +119,7 @@ const String me_lokalizacja = "COWoda"+String(kondygnacja);//+"_mqqt_MARM";
 #define last_case 6 //ilosc wyswietlen na display
 #define saveminut (15 * 60 * 1000) //how often in minutes save energy in LittleFS
 
-#define sensor_18b20_numer 7
+//#define sensor_18b20_numer 7
 #define dbmtemperature "BRoom_Temperature"
 #define dbmpressure  "BRoom_Pressure"
 #define  dbmhigh  "BRoom_Attit"
@@ -129,15 +137,22 @@ const String me_lokalizacja = "COWoda"+String(kondygnacja);//+"_mqqt_MARM";
 #define dWThermometerS  "W_Thermometer"
 #define dEThermometerS  "E_Thermometer"
 #define dSThermometerS "S_Thermometer"
-#ifdef newSensorT1
-#define dT1ThermometerS "T1_Thermometer"
-#endif
-#define dallThermometerS "ALL_Thermometer"
+#define dallThermometerS "NEWS"
 #define dpump1energyS "pump1energyWO"
 #define dpump2energyS "pump2energyCO"
 #define do_stopkawebsiteS "do_stopkawebsiteS"
 #define sensnamelen 32 //dlugosc nazwy czujnika temp 18b20
 #define gain_resolution GAIN_ONE
+
+#define DallSens1_addr "28ff6872801402C1"   //coTherm
+#define DallSens2_addr "28ff9C6b801402d3"   //waterTherm
+#define DallSens3_addr "28FFB66980140291"   //NTherm
+#define DallSens4_addr "28FF78668014028B"   //WTherm
+#define DallSens5_addr "28ffc6258014020e"   //ETherm
+#define DallSens6_addr "28FF4B7280140277"   //STherm
+#define DallSens1_name "coThermometer"
+#define DallSens2_name "waterThermometer"
+
 
 bool forceCO = false,
      forceWater = false,
@@ -153,7 +168,8 @@ bool forceCO = false,
      prgstatusrelay1WO = HIGH,  //do kontroli przekaznika by je wylaczyc gdy byly wymuszone [przelacznikiem
      prgstatusrelay2CO = HIGH,  //do kontroli przekaznika by je wylaczyc gdy byly wymuszone [przelacznikiem
      ExistBM280 = false,
-     najpierwCO = false;  //dla przelaczenia priorytetu najpierw grzanie wody czy co bez forceCO/Water
+     najpierwCO = false,  //dla przelaczenia priorytetu najpierw grzanie wody czy co bez forceCO/Water
+     firstConnectSinceBoot = false;
 
 char WSSID[31],
      WPass[51],
@@ -169,6 +185,7 @@ char WSSID[31],
      mqtt_user[sensitive_size] = MQTT_username,
      mqtt_password[sensitive_size] = MQTT_Password_data;
 
+char log_chars[256];
 
 const double pumpmincurrent = 0.010; //minimalna wartosc pradu dla okreslenia czy pompa chodzi
 
@@ -180,12 +197,19 @@ double energy1used,   //used energy
        commonVolt = 230.00,
        commonFreq = 50.00,
        bmTemp = 0,
-       coTherm,
-       waterTherm,
-       OutsideTempAvg,
+       coTherm = InitTemp,
+       waterTherm = InitTemp,
+       NTherm = InitTemp,
+       ETherm = InitTemp,
+       WTherm = InitTemp,
+       STherm = InitTemp,
+       OutsideTempAvg = InitTemp,
        histereza = histereza_def,
        forceCObelow = forceCObelow_def,
        coConstTempCutOff = coConstTempCutOff_def,
+       pump1energyLast = 0,
+       pump2energyLast = 0,
+       dcoval,                // CO sensor valuer
        waitCOStartingmargin; //dla opoznienia przez 1 godzine wymuszenia pompy co gdy nizsza temp CO niz startowa.
 
 const float panic = 70.0; //temperatura dla paniki -przekroczenia na piecu
@@ -203,12 +227,13 @@ float bm_high_real,
 int what_display = 0, //dla rotacji wyswietlacza
     mqtt_offline_retrycount = 0,
     mqtt_offline_retries = 10, // retries to mqttconnect before timewait
-    dcoval,
     count_nowifi=0,
-    counter,             //to reduce runtime in loop
+    counter =0,             //to reduce runtime in loop
+    mqttReconnects = 0,
     mqtt_port = MQTT_port_No;
 
 int32_t  dbmpressval;
+#define lampPin LED_BUILTIN
 
 unsigned int runNumber = 0, // count of restarts
              publishhomeassistantconfig = 4,                               // licznik wykonan petli -strat od 0
@@ -219,21 +244,26 @@ long C_W_delay = 8000,      // config delay 10 seconds
 
 const unsigned long wifi_checkDelay = 30000,
                     mqttUpdateInterval_ms = 1 * 60 * 1000,      //send data to mqtt and influxdb
-                    mqtt_offline_reconnect_after_ms = 15 * 60 * 1000;      // time when mqtt is offline to wait for next reconnect (15minutes)
+                    mqtt_offline_reconnect_after_ms = 15 * 60 * 1000,      // time when mqtt is offline to wait for next reconnect (15minutes)
+                    WIFIRETRYTIMER = 25 * 1000,
+                    ReadTimeTemps = 90 * 1000,      //Interval TempsUpdate
+                    ReadEnergyTimeInterval = 1 * 1000;
 
 unsigned long wifimilis,
               time_last_C_W_change = 0,
               lastmqtt_reconnect = 0,
-              lastUpdatemqtt = 0;
+              LOOP_WAITTIME = 30*1000,    //for loop
+              lastloopRunTime = 0,        //for loop
+              lastWifiRetryTimer = 0,
+              lastUpdatemqtt = 0,
+              lastReadTimeTemps = 0,
+              lastReadTime1 = 0,                //time last energy1 read
+              lastReadTime2 = 0,                //time last energy2 read
+              lastEnergyRead = 0,
+              lastCOReadTime;
 
 size_t content_len;
-String ownother;
-
-struct s18b20 {
-  uint8_t  ssn[8] = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0};
-  char sname[sensnamelen];
-};
-s18b20 sts[sensor_18b20_numer];
+String ownother, UnassignedTempSensor;
 
 
 /*
@@ -276,6 +306,11 @@ const String BASE_HA_TOPIC = "homeassistant";
 const String OUTSIDE = "outside";
 const String BOILERROOM = "boilerroom";
 const String TEMPERATURE = "_temperature";
+
+const String LOG_TOPIC = BASE_TOPIC + "/log";
+const String WILL_TOPIC = BASE_TOPIC + "/Will";
+const String IP_TOPIC = BASE_TOPIC + "/IP";
+const String STATS_TOPIC = BASE_TOPIC + "/stats";
 
 const String SET_LAST = "/set";
 const String SENSOR = "/sensor/";

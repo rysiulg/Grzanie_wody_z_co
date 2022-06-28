@@ -5,62 +5,15 @@
 //TM1637Display    display(disCLK, disDATA);
 
 
-#include "DS18B20rgw.h"
 
-//GAS:
-/************************Hardware Related Macros************************************/
-#define         RL_VALUE                     (10)    //define the load resistance on the board, in kilo ohms
-#define         RO_CLEAN_AIR_FACTOR          (9.21)  //RO_CLEAR_AIR_FACTOR=(Sensor resistance in clean air)/RO,
-                                                     //which is derived from the chart in datasheet
 
-/***********************Software Related Macros************************************/
-#define         CALIBARAION_SAMPLE_TIMES     (10)    //define how many samples you are going to take in the calibration phase
-#define         CALIBRATION_SAMPLE_INTERVAL  (0)   //define the time interal(in milisecond) between each samples in the
-                                                     //cablibration phase
-#define         READ_SAMPLE_INTERVAL         (0)    //define how many samples you are going to take in normal operation
-#define         READ_SAMPLE_TIMES            (1)     //define the time interal(in milisecond) between each samples in
-                                                     //normal operation
 
-/**********************Application Related Macros**********************************/
-#define         GAS_H2                      (0)
-
-/*****************************Globals***********************************************/
-float           H2Curve[3]  =  {2.3, 0.93,-1.44};    //two points are taken from the curve in datasheet.
-                                                     //with these two points, a line is formed which is "approximately equivalent"
-                                                     //to the original curve.
-                                                     //data format:{ x, y, slope}; point1: (lg200, lg8.5), point2: (lg10000, lg0.03)
-
-float           Ro           =  10; //18.07; //po kalibracji 10;                  //Ro is initialized to 10 kilo ohms
-//ENDGAS
 
 
 
 //byte mac[] = {0x00, 0x10, 0xFA, 0x6E, 0x38, 0x4A};
 
 //EthernetClient client;
-
-
-
-//Ex.) char cVal[10];  float fVal=((22.0 /7.0)*256)-46.85;
-// dtoa(fVal,cVal,4); Serial.println (String(cVal));
-
-  //arguments...
-  // float-double value, char array to fill, precision (4 is .xxxx)
-  //and... it rounds last digit
-
-char* dtoa(double dN, char *cMJA, int iP) {
-  char *ret = cMJA; long lP=1; byte bW=iP;
-  while (bW>0) { lP=lP*10;  bW--;  }
-  long lL = long(dN); double dD=(dN-double(lL))* double(lP);
-  if (dN>=0) { dD=(dD + 0.5);  } else { dD=(dD-0.5); }
-  long lR=abs(long(dD));  lL=abs(lL);
-  if (lR==lP) { lL=lL+1;  lR=0;  }
-  if ((dN<0) & ((lR+lL)>0)) { *cMJA++ = '-';  }
-  ltoa(lL, cMJA, 10);
-  if (iP>0) { while (*cMJA != '\0') { cMJA++; } *cMJA++ = '.'; lP=10;
-  while (iP>1) { if (lR< lP) { *cMJA='0'; cMJA++; } lP=lP*10;  iP--; }
-  ltoa(lR, cMJA, 10); }  return ret; }
-
 
 
 namespace Sensor {

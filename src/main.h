@@ -1,3 +1,7 @@
+// extern "C"
+// {
+// #include "user_interface.h"
+// }
 #include <Arduino.h>
 
 //#include <Update.h>
@@ -64,6 +68,26 @@ const String  stopka = String(MFG)+" "+version[4]+version[5]+"-"+version[2]+vers
 //#include <ArduinoJson.h> //--------- https://github.com/bblanchon/ArduinoJson/tree/v5.13.2 ------
 //#include <EEPROM.h>
 
+
+#ifdef ESP32
+//#include <WiFi.h>
+//#include <Update.h>
+#include <AsyncTCP.h>
+#include <AsyncUDP.h>
+//#include <ESPmDNS.h>
+#include <AsyncDNSServer.h>
+#include "esp_task_wdt.h"
+#else
+#include <Updater.h>
+#include <ESP8266WiFi.h>
+#include <Hash.h>
+#include <ESPAsyncTCP.h>
+#include <ESP8266mDNS.h>
+//#include <ESPAsyncUDP.h>
+//#include <ESPAsyncDNSServer.h>
+#endif
+
+#include <ESPAsyncWebServer.h>
 #include <PubSubClient.h>
 
 #ifdef enableWebSerial
@@ -78,30 +102,15 @@ const String  stopka = String(MFG)+" "+version[4]+version[5]+"-"+version[2]+vers
   #include <InfluxDbClient.h>
   #endif
 #endif
-#include <ESPAsyncWebServer.h>
-#ifdef ESP32
-//#include <WiFi.h>
-//#include <Update.h>
-#include <AsyncTCP.h>
-#include <AsyncUDP.h>
-//#include <ESPmDNS.h>
-#include <AsyncDNSServer.h>
-#include "esp_task_wdt.h"
-#else
-//#include <Updater.h>
-//#include <ESP8266WiFi.h>
-#include <Hash.h>
-#include <ESPAsyncTCP.h>
-#include <ESPAsyncUDP.h>
-//#include <ESP8266mDNS.h>
-//#include <ESPAsyncDNSServer.h>
+
+#ifdef doubleResDet
+#include <ESP_DoubleResetDetector.h>
+#endif
 
 #ifdef enableWifiManager
 #include <ESPAsync_WiFiManager.h>              //https://github.com/khoih-prog/ESPAsync_WiFiManager
 #endif
-//#include <DNSServer.h>
-
-#endif
+#include <DNSServer.h>
 #include <String.h>
 
 #if !( defined(ESP8266) )
@@ -110,38 +119,113 @@ const String  stopka = String(MFG)+" "+version[4]+version[5]+"-"+version[2]+vers
 
 //#include <AsyncElegantOTA.h>
 
+#include <DallasTemperature.h>
+#include <OneWire.h>
 #include "BMP085.h"
+// #include <SPI.h>
 #include <Adafruit_ADS1X15.h>
-
-extern "C"
-{
-#include "user_interface.h"
-}
+#ifdef enableArduinoOTA
+#include <ArduinoOTA.h>
+#endif
+#include <SPI.h>
 
 AsyncWebServer webserver(wwwport);
-//DNSServer dns;
 Adafruit_BMP085 bmp; //0x77 addr
+OneWire oneWire(ONE_WIRE_BUS);
+DallasTemperature sensors(&oneWire);
 Adafruit_ADS1X15 ads1;//(0x48); //na wszelki wypadek zrobie jako drugi adres zamiast 48
 SevenSegmentTM1637 display(disCLK, disDATA);
 //TM1637Display    display(disCLK, disDATA);
 WiFiClient espClient;
-PubSubClient mqttClient(espClient);
+PubSubClient mqttclient(espClient);
 
 #ifdef ENABLE_INFLUX
 InfluxDBClient InfluxClient(INFLUXDB_URL, INFLUXDB_DB_NAME);
 Point InfluxSensor(InfluxMeasurments);
 #endif
+#ifdef doubleResDet
+  #define DRD_TIMEOUT 0.1
 
+  // address to the block in the RTC user memory
+  // change it if it collides with another usageb
+  // of the address block
+  #define DRD_ADDRESS 0x00
+  DoubleResetDetector* drd;
+#endif
+DNSServer dnsServer;
 
 
 
 uint8_t mac[6] = {(uint8_t)strtol(WiFi.macAddress().substring(0,2).c_str(),0,16), (uint8_t)strtol(WiFi.macAddress().substring(3,5).c_str(),0,16),(uint8_t)strtol(WiFi.macAddress().substring(6,8).c_str(),0,16),(uint8_t)strtol(WiFi.macAddress().substring(9,11).c_str(),0,16),(uint8_t)strtol(WiFi.macAddress().substring(12,14).c_str(),0,16),(uint8_t)strtol(WiFi.macAddress().substring(15,17).c_str(),0,16)};
 
 
+
+//GAS:
+/************************Hardware Related Macros************************************/
+#define         RL_VALUE                     (10)    //define the load resistance on the board, in kilo ohms
+#define         RO_CLEAN_AIR_FACTOR          (9.21)  //RO_CLEAR_AIR_FACTOR=(Sensor resistance in clean air)/RO,
+                                                     //which is derived from the chart in datasheet
+/***********************Software Related Macros************************************/
+#define         CALIBARAION_SAMPLE_TIMES     (10)    //define how many samples you are going to take in the calibration phase
+#define         CALIBRATION_SAMPLE_INTERVAL  (0)   //define the time interal(in milisecond) between each samples in the
+                                                     //cablibration phase
+#define         READ_SAMPLE_INTERVAL         (0)    //define how many samples you are going to take in normal operation
+#define         READ_SAMPLE_TIMES            (1)     //define the time interal(in milisecond) between each samples in
+                                                     //normal operation
+/**********************Application Related Macros**********************************/
+#define         GAS_H2                      (0)
+/*****************************Globals***********************************************/
+float           H2Curve[3]  =  {2.3, 0.93,-1.44};    //two points are taken from the curve in datasheet.
+                                                     //with these two points, a line is formed which is "approximately equivalent"
+                                                     //to the original curve.
+                                                     //data format:{ x, y, slope}; point1: (lg200, lg8.5), point2: (lg10000, lg0.03)
+float           Ro           =  10; //18.07; //po kalibracji 10;                  //Ro is initialized to 10 kilo ohms
+//ENDGAS
+  //Stężenie: Oznaki i objawy
+  //~ 100 ppm Lekki ból głowy, wypieki (nieokreślony czas narażenia)
+  //200–300 ppm Ból głowy (czas narażenia 5–6 godz.)
+  //400–600 ppm Silny ból głowy, osłabienie, zawroty głowy, nudności, wymioty (czas narażenia 4–5 godz.)
+  //1,100–1,500 ppm Przyspieszone tętno i oddech, omdlenie (zasłabnięcie), śpiączka, przerywane ataki drgawek (czas narażenia 4–5 godz.)
+  //5,000–10,000 ppm Słabe tętno, płytki oddech/zatrzymanie oddychania, śmierć (czas narażenia 1–2 minuty)
+  //Źródło: Brytyjska Agencja Ochrony Zdrowia (HPA), Kompendium zagrożeń chemicznych, Tlenek węgla, Wersja 3, 2011
+  //
+  //Detektor tlenku węgla uaktywni się, jeśli wykryje określone stężenie gazu w określonym przedziale czasu zgodnie z poniższym opisem:
+  //50 ppm: Alarm w ciągu 60–90 minut
+  //100 ppm: Alarm w ciągu 10–40 minut
+  //300 ppm: Alarm w ciągu 3 minut
+  //Czujnik czadu został ustawiony zgodnie z odpowiednią normą europejską, tak aby alarmy były wyzwalane w zależności od stężenia gazu i okresu jego występowania. Alarm uaktywnia się, gdy poziom stężenia CO narasta w czasie do niebezpiecznych poziomów lub wymagane jest natychmiastowe działanie. Natomiast unikane są fałszywe alarmy związane z tymczasowymi niskimi stężeniami CO (np. w wyniku działania dymu papierosowego).
+
+
+
+
+//common_functions.h
+void log_message(char* string);
+String uptimedana(unsigned long started_local);
+String getJsonVal(String json, String tofind);
+bool isValidNumber(String str);
+String convertPayloadToStr(byte *payload, unsigned int length);
+int dBmToQuality(int dBm);
+int getWifiQuality();
+int getFreeMemory();
+bool PayloadStatus(String payloadStr, bool state);
+bool PayloadtoValidFloatCheck(String payloadStr);
+float PayloadtoValidFloat(String payloadStr,bool withtemps_minmax=false, float mintemp=InitTemp, float maxtemp=InitTemp);
+void restart();
+String getIdentyfikator(int x);
+#ifdef enableArduinoOTA
+void setupOTA();
+#endif
+char* dtoa(double dN, char *cMJA, int iP);
+
+
 void setup();
+void getCOGAS(int pinpriv);
+double getkWh(double EnergyAmpHourValue);
+void ReadEnergyUsed();
+void ReadTemperatures();
+void displayCoCo();
 void loop();
-void supla_and_relay_obsluga(uint8_t numer, bool stan);
-void check_temps_pumps();
+
 
 char* dtoa(double dN, char *cMJA, int iP);
 void onMqttMessage(const char* topic, const uint8_t* payload, uint16_t length);
@@ -153,8 +237,8 @@ void SaveEnergy();        //zapisz do spiff stan zuzycia energii
 void SaveConfig();        //zapisz w spiffs configuracje
 void gas_leak_check();    //sprawdz czujnik gazu
 void display_temp_rotation();   //obsluga rotacji wyswietlacza
-void subWebServers();           //obsluga serwerow www
-void WiFi_up();
+void starthttpserver();           //obsluga serwerow www
+void notFound(AsyncWebServerRequest *request);
 String PrintHex8(const uint8_t *data, char separator, uint8_t length); // prints 8-bit data in hex , uint8_t length
 String checkUnassignedSensors();
 #ifdef enableWifiManager
@@ -165,12 +249,11 @@ void hexCharacterStringToBytes(byte *byteArray, const char *hexString);
 byte nibble(char c);
 void dumpByteArray(const byte * byteArray);
 void array_to_string(byte array[], unsigned int len, char buffer[]);
-String uptimedana(unsigned long started_local);
-String getjson();
 void handleUpdate(AsyncWebServerRequest *request);
 void handleDoUpdate(AsyncWebServerRequest *request, const String& filename, size_t index, uint8_t *data, size_t len, bool final);
 void printProgress(size_t prg, size_t sz);
-void supla_and_relay_obsluga(uint8_t numer, bool stan);
+void ChangeRelayStatus(uint8_t numer, bool stan);
+void check_temps_pumps();
 String getlinki();
 int  MQGetPercentage(float rs_ro_ratio, float *pcurve);
 int MQGetGasPercentage(float rs_ro_ratio, int gas_id);
@@ -182,16 +265,13 @@ double getenergy(int adspin);
 String getJsonVal(String json, String tofind);
 void ReadTemperatures();
 String convertPayloadToStr(byte *payload, unsigned int length);
-bool isValidNumber(String str);
 void mqttCallback(char *topic, byte *payload, unsigned int length);
-void reconnect();
+void mqtt_reconnect();
 #ifdef ENABLE_INFLUX
 void updateInfluxDB();
 #endif
 void updateMQTTData();
 void mqttHAPublish_Config (String HADiscoveryTopic, String ValueTopicName, String SensorName, String friendlySensorName, int unitClass, String cmd_temp = String('\0'));
-bool PayloadtoValidFloatCheck(String payloadStr);
-float PayloadtoValidFloat(String payloadStr,bool withtemps_minmax=false, float mintemp=InitTemp, float maxtemp=InitTemp);
 #ifdef enableWebSerial
 void recvMsg(uint8_t *data, size_t len);
 #endif
