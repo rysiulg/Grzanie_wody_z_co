@@ -237,9 +237,9 @@ float PayloadtoValidFloat(String payloadStr, bool withtemps_minmax, float mintem
       if (valuefromStr<mintemp and mintemp!=InitTemp) valuefromStr = mintemp;
       sprintf(log_chars, "Value is valid number: %s", String(valuefromStr,2).c_str());
       log_message(log_chars);
-      return valuefromStr;
     }
-    //if here is sprintf and return -i have dpouble reading because first i check is ok and second get value ;(
+    return valuefromStr;
+    //if here is sprintf and return -i have dpouble reading because first i check is ok and second get value
   }
 }
 
