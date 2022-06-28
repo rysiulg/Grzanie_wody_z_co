@@ -22,7 +22,7 @@ void log_message(char* string, u_int specialforce)  //         log_message((char
 //   if (webSocket.connectedClients() > 0) {
 //     webSocket.broadcastTXT(string, strlen(string));
 //   }
-  if (mqttclient.connected() and (sendlogtomqtt or (specialforce % 2) == 1))
+  if (mqttclient.connected() and (sendlogtomqtt or (specialforce == 1)))
   {
     if(send_string.length() > 2) send_string[100] = '\0';
     if (!mqttclient.publish(LOG_TOPIC.c_str(), send_string.c_str())) {
@@ -235,10 +235,11 @@ float PayloadtoValidFloat(String payloadStr, bool withtemps_minmax, float mintem
     } else {
       if (valuefromStr>maxtemp and maxtemp!=InitTemp) valuefromStr = maxtemp;
       if (valuefromStr<mintemp and mintemp!=InitTemp) valuefromStr = mintemp;
+      sprintf(log_chars, "Value is valid number: %s", String(valuefromStr,2).c_str());
+      log_message(log_chars);
+      return valuefromStr;
     }
-    sprintf(log_chars, "Value is valid number: %s", String(valuefromStr,2).c_str());
-    log_message(log_chars);
-    return valuefromStr;
+    //if here is sprintf and return -i have dpouble reading because first i check is ok and second get value ;(
   }
 }
 
@@ -299,7 +300,7 @@ void setupOTA() {
   //ArduinoOTA.setPassword("admin");
 
   ArduinoOTA.onStart([]() {
-    log_message((char*)F("Starting update by OTA"));
+    log_message((char*)F("Starting update by OTA"),1);
   });
   ArduinoOTA.onEnd([]() {
     log_message((char*)F("Finished update by OTA. Restart in 2sec..."),1);
@@ -310,7 +311,7 @@ void setupOTA() {
   ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
     if ((int)(progress/total) % 5 == 0)
     {
-      sprintf(log_chars,"Update in progress (Total %s bytes):  %s %",String(total).c_str(), String((int)progress/total).c_str());
+      sprintf(log_chars,"Update in progress (Total %s/%s bytes).  %s%%",String(total).c_str(), String(total).c_str(), String(progress/total).c_str());
       log_message(log_chars);
     }
   });

@@ -944,6 +944,7 @@ double getenergy(int adspin) {
   //    }
   //return Ah
   const double hour = 60 * 60 * 1000;
+  if (RMSCurrent < (0.5/commonVolt)) RMSCurrent = 0;  //ogranicz minimum do 0,5W
   return ((millis()-measureTime)/hour) * RMSCurrent*0.707 * ((millis()-measureTime)/ReadEnergyTimeInterval); //return real current nmqttident max rms
 }
 

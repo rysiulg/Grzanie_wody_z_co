@@ -318,19 +318,16 @@ void ReadEnergyUsed()
 {
   if (((millis() - lastEnergyRead) > ReadEnergyTimeInterval or lastEnergyRead == 0) and isadslinitialised)
   {
-    double lastEnergyAmpValue = 0;
     if (isnan(energy1used)) energy1used = 0;
     if (isnan(energy2used)) energy2used = 0;
     lastEnergyRead = millis();
-    lastEnergyAmpValue = getenergy(ads_0);
-    if (isnan(lastEnergyAmpValue)) lastEnergyAmpValue = 0;
-    pump1energyLast = lastEnergyAmpValue;                 //to check if pump is running
-    energy1used += getkWh(lastEnergyAmpValue);
-    lastEnergyAmpValue = getenergy(ads_1);
-    if (isnan(lastEnergyAmpValue)) lastEnergyAmpValue = 0;
-    pump2energyLast = lastEnergyAmpValue;                   //to check if pump is running
-    energy2used += getkWh(lastEnergyAmpValue);
-    sprintf(log_chars,"energy readed: 1: %s  2: %s",String(energy1used,4).c_str(),String(energy2used,4).c_str());
+    pump1energyLast = getenergy(ads_0);                  //to check if pump is running
+    if (isnan(pump1energyLast)) pump1energyLast = 0;
+    energy1used += getkWh(pump1energyLast);
+    pump2energyLast = getenergy(ads_1);                   //to check if pump is running
+    if (isnan(pump2energyLast)) pump2energyLast = 0;
+    energy2used += getkWh(pump2energyLast);
+    sprintf(log_chars,"energy measured 1: %s, 2: %s  energy used: 1: %s  2: %s",String(pump1energyLast,4).c_str(),String(pump2energyLast,4).c_str(),String(energy1used,4).c_str(),String(energy2used,4).c_str());
     log_message(log_chars);
   }
 }
