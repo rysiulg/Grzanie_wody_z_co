@@ -11,8 +11,8 @@
 
 // v.2.0 Initial after move from Arduino Mega to ESP32
 
-#define debug		//Serial Debug
-#define debug1
+//#define debug		//Serial Debug
+//#define debug1
 
 #define enableArduinoOTA
 //#define wdtreset
