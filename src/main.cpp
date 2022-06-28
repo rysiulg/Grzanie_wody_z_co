@@ -327,8 +327,11 @@ void ReadEnergyUsed()
     pump2energyLast = getenergy(ads_1);                   //to check if pump is running
     if (isnan(pump2energyLast)) pump2energyLast = 0;
     energy2used += getkWh(pump2energyLast);
-    sprintf(log_chars,"energy measured 1: %s, 2: %s  energy used: 1: %s  2: %s",String(pump1energyLast,4).c_str(),String(pump2energyLast,4).c_str(),String(energy1used,4).c_str(),String(energy2used,4).c_str());
-    log_message(log_chars);
+    if (pump1energyLast > pumpmincurrent or pump2energyLast > pumpmincurrent)     //limit log to usable datas
+    {
+      sprintf(log_chars,"energy measured 1: %s, 2: %s  energy used: 1: %s  2: %s",String(pump1energyLast,4).c_str(),String(pump2energyLast,4).c_str(),String(energy1used,4).c_str(),String(energy2used,4).c_str());
+      log_message(log_chars);
+    }
   }
 }
 
@@ -685,7 +688,68 @@ void check_temps_pumps()
     log_message((char*)F("Force to panic... Change state relays to ON..."));
     panicbuz = true;
   }
-  else
+  else {
+    log_message((char*)F("No Panic loop......"));
+    //zalozenie mamy prawidlowe odczyty i kontynuujemy kontrole
+    panicbuz = false;
+    if (pump1energyLast > pumpmincurrent and digitalRead(relay1) == HIGH) { // or (OutsideTempAvg>forceCObelow*1.05)) and coTherm > coConstTempCutOff)  { //digitalRead(relay1) == HIGH)  or (OutsideTempAvg>forceCObelow*1.05)) and coTherm > coConstTempCutOff)   {
+        log_message((char*)F("WYMUŚ: DAJ H2O -forceWater"));
+        display.blink();
+        forceWater=true;
+    }
+    if (pump2energyLast > pumpmincurrent and digitalRead(relay2) == HIGH) { //or (OutsideTempAvg<forceCObelow)) and coTherm > coConstTempCutOff)  {
+        log_message((char*)F("WYMUŚ: DAJ dCO -forceCO"));
+        display.blink();
+      forceCO=true;
+    }
+    if (coTherm < (coConstTempCutOff - histereza) and panicbuz == false ) {
+      //wylacz bo nic sie nie dzieje i temp pieca<30-histereza stopni
+      prgstatusrelay1WO = LOW; //supla_and_relay_obsluga(pumpWaterRelay, LOW); //WyLACZ ZMIENILEM LOGIKE
+      prgstatusrelay2CO = LOW; //supla_and_relay_obsluga(pumpCoRelay, LOW); //WyLACZ ZMIENILEM LOGIKE
+      forceCO=false;
+      forceWater=false;
+      if ( (waitCOStartingmargin + 6*60*60*1000) < millis()) najpierwCO=false; //opoznij 1 godzine wylaczenie najpierwCO przed wylaczeniem
+      log_message((char*)F("Wylaczam pompy -za niska temperatura na piecu"));
+    } else {
+      waitCOStartingmargin=millis();  //odswiezenie licznika bo inaczej moze przelaczyc po zdefiniowanym czasie grzania
+      log_message((char*)F("Grzejemy się ;) -mamy temp na piecu"));
+      if ((coTherm + histereza) > waterTherm or forceWater == true) { //or (forceWater==true  and forceCO==false)) {
+        log_message((char*)F("gdy temp pieca wieksza od wody -wlacz by zagrzac"));
+        prgstatusrelay1WO = HIGH; //supla_and_relay_obsluga(pumpWaterRelay, HIGH);    //wlacz wode i wylacz co  //WLACZ ZMIENILEM LOGIKE
+        prgstatusrelay2CO = LOW; //supla_and_relay_obsluga(pumpCoRelay, LOW);  //WYLACZ ZMIENILEM LOGIKE
+    //    forceCO=false;
+      } else
+      if ((( coTherm + histereza) < waterTherm  ) or najpierwCO == true) { //or forceCO == true) {  //and OutsideTempAvg < forceCObelow*1.05
+        log_message((char*)F("wlacz CO podlogowek gdy grzanie wody wylaczone"));
+        //wlacz CO podlogowek gdy grzanie wody wylaczone i srednia na zewnatrz temp <24stopni
+        //oraz gdy temp CO<temp wody w baniaku
+        prgstatusrelay1WO = LOW; //supla_and_relay_obsluga(pumpWaterRelay, LOW);  //WYLACZ ZMIENILEM LOGIKE
+        if (OutsideTempAvg < forceCObelow) prgstatusrelay2CO = HIGH;   //ogranicz grzanie co gdy temp na zewnątrz <10
+      } else
+      // if (OutsideTempAvg > forceCObelow*1.05 ) { //and forceCO == true) {
+      //   #ifdef debug1
+      //     Serial.println(String(millis())+F(": Disable CO "));
+      //   #endif
+      //   #ifdef enableWebSerial
+      //   WebSerial.println(String(millis())+F(": Disable CO "));
+      //   #endif
+      //   prgstatusrelay2CO = LOW;
+      // } else {
+      //   forceCO = true;
+      //   displayCoCo();
+      // }
+      if (forceWater == true and coTherm < (coConstTempCutOff - histereza) and panicbuz == false) {
+        log_message((char*)F("Force Water"));
+        prgstatusrelay1WO = HIGH; //supla_and_relay_obsluga(pumpWaterRelay, HIGH);    //wlacz wode i co  //WLACZ ZMIENILEM LOGIKE
+        if (forceCO == true) {prgstatusrelay2CO = HIGH;} else {prgstatusrelay2CO = LOW;}
+      } else
+      if (forceCO == true and coTherm < (coConstTempCutOff - histereza) and panicbuz == false) {
+        log_message((char*)F("Force CO"));
+        prgstatusrelay2CO = HIGH; //supla_and_relay_obsluga(pumpCoRelay, HIGH);   //WLACZ ZMIENILEM LOGIKE
+        if (forceWater == true) {prgstatusrelay1WO = HIGH;} else {prgstatusrelay1WO = LOW;}
+      }
+    }
+  }
   ChangeRelayStatus(pumpWaterRelay, prgstatusrelay1WO);
   ChangeRelayStatus(pumpCoRelay, prgstatusrelay2CO);
 }

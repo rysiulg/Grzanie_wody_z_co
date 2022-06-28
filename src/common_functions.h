@@ -311,7 +311,7 @@ void setupOTA() {
   ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
     if ((int)(progress/total) % 5 == 0)
     {
-      sprintf(log_chars,"Update in progress (Total %s/%s bytes).  %s%%",String(total).c_str(), String(total).c_str(), String(progress/total).c_str());
+      sprintf(log_chars,"Update in progress (Total %s/%s bytes).  %s%%",String(progress).c_str(), String(total).c_str(), String(float((float)progress/(float)total)*100,0).c_str());
       log_message(log_chars);
     }
   });
