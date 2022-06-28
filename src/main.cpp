@@ -544,7 +544,7 @@ void loop()
     message += getWifiQuality();
     message += F("% ## Mqtt reconnects: ");
     message += mqttReconnects;
-    message += F("%");
+//    message += F("%");
     log_message((char *)message.c_str());
 
     String stats = F("{\"uptime\":");
