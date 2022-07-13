@@ -113,48 +113,10 @@ String checkUnassignedSensors() {
   return nowe18baddr;
 }
 
-//******************************************************************************************
-
-String PrintHex8(const uint8_t *data, char separator, uint8_t length) // prints 8-bit data in hex , uint8_t length
-{
-  uint8_t lensep = sizeof(separator);
-  int dod = 0;
-  if (separator == 0x0) {
-    lensep = 0;
-    dod = 1;
-  }
-  #ifdef wdtreset
-  wdt_reset();
-  #endif
-  if (lensep > 1) dod = 1 - lensep;
-  char tmp[length * (2 + lensep) + dod - lensep];
-  byte first;
-  byte second;
-  for (int i = 0; (i + 0) < length; i++) {
-    first = (data[i] >> 4) & 0x0f;
-    second = data[i] & 0x0f;
-    // base for converting single digit numbers to ASCII is 48
-    // base for 10-16 to become lower-case characters a-f is 87
-    // nmqttidente: difference is 39
-    tmp[i * (2 + lensep)] = first + 48;
-    tmp[i * (2 + lensep) + 1] = second + 48;
-    if ((i) < length and (i) + 1 != length) tmp[i * (2 + lensep) + 2] = separator;
-    if (first > 9) tmp[i * (2 + lensep)] += 39;
-    if (second > 9) tmp[i * (2 + lensep) + 1] += 39;
-
-  }
-  tmp[length * (2 + lensep) + 0 - lensep] = 0;
-#ifdef debug
-  Serial.print(F("MAC Addr: "));
-  Serial.println(tmp);
-#endif
-  //     debugA("%s",tmp);
-  return tmp;
-}
-
 
 //******************************************************************************************
 //     background-color: #01DF3A;
+#ifndef enableWebSocket
 const char index_html[] PROGMEM = R"rawliteral(
 <!DOCTYPE HTML><html>
 <head>
@@ -189,6 +151,7 @@ const char index_html[] PROGMEM = R"rawliteral(
   %scriptsectionreplace2%
 </script>
 </html>)rawliteral";
+#endif
 //******************************************************************************************
 String getpumpstatus(uint8_t pompa) {
 
@@ -234,6 +197,7 @@ String getpumpstatus(uint8_t pompa) {
 }
 // Replaces placeholder with DHT values
 String processor(const String var) {
+  #ifndef enableWebSocket
   #ifdef debug
   sprintf(log_chars,"Processing processor: %s",var.c_str());
   log_message(log_chars);
@@ -245,7 +209,9 @@ String processor(const String var) {
     String a = "</B>ESP CO Server dla: <B>" + String(me_lokalizacja) + "</B><BR>v. ";
     a += me_version;
     a += "<br><font size=\"2\" color=\"DarkGreen\">";
+    #ifdef enableMQTT
     a += espClient.connected()? "MQTT "+String(msg_Connected)+": "+String(mqtt_server)+":"+String(mqtt_port) : "MQTT "+String(msg_disConnected)+": "+String(mqtt_server)+":"+String(mqtt_port) ;  //1 conn, 0 not conn
+    #endif
     #ifdef ENABLE_INFLUX
     a += " + INFLUXDB: "+String(INFLUXDB_DB_NAME)+"/"+String(InfluxMeasurments);
     #endif
@@ -327,7 +293,7 @@ String processor(const String var) {
     a += String(energy1used,4);
     a += F("kWh</b>, Energy 2 used CO: <b>");
     a += String(energy2used,4);
-    a += F("kWh</b><br> ads initialised: <b>");
+    a += F("kWh</b><br> ADS initialised: <b>");
     a += String(isadslinitialised ? "Tak" : "Nie");
     a += F("</B>");
     if (String(checkUnassignedSensors()).length()>0) a += F("<br> Unassigned: ") + String(checkUnassignedSensors());
@@ -436,6 +402,7 @@ if (var == "bodywstaw2") {
 //    Serial.println(var);
   #endif
   return String("\0");
+  #endif
 }
 
 String do_stopkawebsite() {
@@ -489,6 +456,7 @@ String getlinki() {
 }
 
 void starthttpserver() {
+  #ifndef enableWebSocket
   //  httpUpdater.setup(&httpServer, update_path, update_username, update_password);
   //  httpwebserver.on("/test", HTTP_GET, []() {
   //    httpwebserver.send(200, "text/html",  SendHTML(dcoThermstatometerS->getlast(), waterThermometerS->getlast())); //dcoThermstat,waterTherm));
@@ -568,11 +536,14 @@ void starthttpserver() {
 
   webserver.onNotFound(notFound);
   webserver.begin();
+  #endif
 }
 
+#ifndef enableWebSocket
 void notFound(AsyncWebServerRequest *request) {
     request->send(404, "text/plain", "Not found");
 }
+#endif
 
 //******************************************************************************************
 void display_temp_rotation() {
@@ -948,71 +919,7 @@ double getenergy(int adspin) {
   return ((millis()-measureTime)/hour) * RMSCurrent*0.707 * ((millis()-measureTime)/ReadEnergyTimeInterval); //return real current nmqttident max rms
 }
 
-const char htmlup[] PROGMEM = R"rawliteral(
-  <form method='POST' action='/doUpdate' enctype='multipart/form-data'><input type='file' name='update'><input type='submit' value='Update'></form>)rawliteral";
-void handleUpdate(AsyncWebServerRequest *request) {
-  request->send(200, "text/html", htmlup);
-}
 
-void handleDoUpdate(AsyncWebServerRequest *request, const String& filename, size_t index, uint8_t *data, size_t len, bool final) {
-//#define U_FLASH   0  //copied from ESP8266 library dla ESP32 sprawdzic
-#define U_LittleFS  100
-//#define U_AUTH    200
-  if (!index) {
-    AsyncWebServerResponse *response = request->beginResponse(302, "text/plain", "Please wait while the device rebomqttidents");
-    response->addHeader("Refresh", "10");
-    response->addHeader("Location", "/");
-    request->send(response);
-    Serial.println("Update");
-    content_len = request->contentLength();
-    // if filename includes LittleFS, update the LittleFS partition
-    int cmd = (filename.indexOf("LittleFS") > -1) ? U_LittleFS : U_FLASH;
-#ifdef ESP8266
-    Update.runAsync(true);
-    if (!Update.begin(content_len, cmd)) {
-#else
-    if (!Update.begin(UPDATE_SIZE_UNKNOWN, cmd)) {
-#endif
-      Update.printError(Serial);
-    }
-  }
-
-  if (Update.write(data, len) != len) {
-    Update.printError(Serial);
-#ifdef ESP8266
-  } else {
-    if ((Update.progress() * 100) / Update.size() % 5 == 0) {
-    sprintf(log_chars,"Progress: %d%%", (Update.progress() * 100) / Update.size());
-    log_message(log_chars);
-    }
-#endif
-  }
-
-  if (final) {
-
-
-    if (!Update.end(true)) {
-      Update.printError(Serial);
-    } else {
-      SaveEnergy();
-      log_message((char*)F("Update complete"));
-      Serial.flush();
-      WiFi.forceSleepBegin();
-      webserver.end();
-      WiFi.disconnect();
-//      wifi.disconnect();
-      delay(5000);
-      WiFi.forceSleepBegin(); wdt_reset(); ESP.restart(); while (1)ESP.restart(); wdt_reset(); ESP.restart();
-    }
-  }
-}
-
-void printProgress(size_t prg, size_t sz) {
-  if ((Update.progress() * 100) / Update.size() % 5 == 0) {
-  sprintf(log_chars,"Progress: %d%%", (prg * 100) / content_len);
-  log_message(log_chars);
-  }
-}
 
 #ifdef enableWebSerial
 void recvMsg(uint8_t *data, size_t len)
@@ -1125,8 +1032,7 @@ void recvMsg(uint8_t *data, size_t len)
   }else
   if (d == "HELP")
   {
-    WebSerial.print(String(millis())+": ");
-    WebSerial.println(F("KOMENDY:\n \
+    log_message((char*)F("KOMENDY:\n \
       FORCECOBELOW xx  -Zmienia wartość xx 'wymusza pompe CO poniżej temperatury średniej zewnetrznej', \n \
       COCUTOFFTEMP xx  -Zmienia wartość xx 'Temperatura graniczna na wymienniku oznacza ze piec sie grzeje',\n \
       HIST xx          -Zmienia wartość xx histerezy progu grzania,\n \
@@ -1143,8 +1049,10 @@ void recvMsg(uint8_t *data, size_t len)
 }
 #endif
 
+#ifdef enableMQTT
 void mqtt_callback(char *topic, byte *payload, unsigned int length)
 {
+  #include "configmqtttopics.h"
   const String topicStr(topic);
 
   String payloadStr = convertPayloadToStr(payload, length);
@@ -1236,54 +1144,32 @@ void mqtt_callback(char *topic, byte *payload, unsigned int length)
   }
    receivedmqttdata = false;
 }
+#endif
 
-void mqtt_reconnect()
+void mqtt_reconnect_subscribe_list()
 {
-  // Loop until we're reconnected
-  while (!mqttclient.connected() and mqtt_offline_retrycount < mqtt_offline_retries)
-  {
-    const char *clientId = me_lokalizacja.c_str();
-
-    if (mqttclient.connect(clientId, mqtt_user, mqtt_password))
-    {
-      sprintf(log_chars,"Attempting MQTT connection... OK as: %s", clientId);
-      log_message(log_chars);
-      mqtt_offline_retrycount = 0;
-
+  #ifdef enableMQTT
       mqttclient.subscribe(SUPLA_VOLT_TOPIC.c_str());
       mqttclient.subscribe(SUPLA_FREQ_TOPIC.c_str());
       mqttclient.subscribe((BOILERROOM_SWITCH_TOPIC_SET+"_"+BOILERROOM_PUMP1WA).c_str());
       mqttclient.subscribe((BOILERROOM_SWITCH_TOPIC_SET+"_"+BOILERROOM_PUMP2CO).c_str());
-
-
-
-
-      // for (int x=0;x<maxsensors;x++){
-      //   //String mqttident=getmqttident(x);
-      //   if (room_temp[x].idpinout!=0) client.subscribe((ROOM_TEMPERATURE_SETPOINT_SET_TOPIC + getmqttident(x) + SET_LAST).c_str());
-      // }
-      // mqttclient.subscribe(NEWS_GET_TOPIC.c_str());
-      // mqttclient.subscribe(COPUMP_GET_TOPIC.c_str());
-      // mqttclient.subscribe(BOILER_FLAME_STATUS_TOPIC.c_str());
-
-      // mqttclient.subscribe(TEMP_CUTOFF_SET_TOPIC.c_str());  //tego nie ma w obsludze
-
-    } else {
-      sprintf(log_chars,"Attempting MQTT connection failed, rc= %s, try again in 5 seconds", String(mqttclient.state()).c_str());
-      log_message(log_chars);
-      mqtt_offline_retrycount++;
-      // Wait 5 seconds before retrying
-      delay(5000);
-    }
-  }
-  #ifdef debug
-  Serial.println("exit mqtt reconnecyt");
   #endif
 }
 
 #ifdef ENABLE_INFLUX
 void updateInfluxDB()
 {
+  #include "configmqtttopics.h"
+  if (InfluxClient.validateConnection())
+  {
+    sprintf(log_chars, "Connected to InfluxDB: %s", String(InfluxClient.getServerUrl()).c_str());
+    log_message(log_chars);
+  }
+  else
+  {
+    sprintf(log_chars, "InfluxDB connection failed: %s", String(InfluxClient.getLastErrorMessage()).c_str());
+    log_message(log_chars);
+  }
   InfluxSensor.clearFields();
   // Report RSSI of currently connected network
   InfluxSensor.addField(mqttident + "rssi", (WiFi.RSSI()));
@@ -1307,15 +1193,9 @@ void updateInfluxDB()
   if (STherm != InitTemp) {InfluxSensor.addField(mqttident + String(OUTSIDE_TEMPERATURE_S), STherm);}
   if (OutsideTempAvg != InitTemp) {InfluxSensor.addField(mqttident + String(OUTSIDE_TEMPERATURE_A), OutsideTempAvg);}
 
-
-  // InfluxSensor.addField(String(TEMP_CUTOFF)+String(kondygnacja), cutOffTemp);
-//  InfluxSensor.addField(String(DIAGS_mqttidentHERS_FAULT), status_Fault ? "1" : "0");
-//  InfluxSensor.addField(String(DIAGS_mqttidentHERS_DIAG), status_Diagnostic ? "1" : "0");
-  // InfluxSensor.addField(String(INTEGRAL_ERROR_GET_TOPIC)+String(kondygnacja), ierr);
-  // InfluxSensor.addField(String(LOG_GET_TOPIC)+String(kondygnacja), LastboilerResponseError);
-
   // Print what are we exactly writing
-  log_message((char*)F("Writing to InfluxDB: "));
+  // don't why thi schanges isadslinitialised to true    sprintf(log_chars,"Writing to InfluxDB: %s", String(InfluxClient.pointToLineProtocol(InfluxSensor)).c_str());
+  //log_message(log_chars); //(char*)F("Writing to InfluxDB: "));
   // Write point
   if (!InfluxClient.writePoint(InfluxSensor))
   {
@@ -1325,6 +1205,9 @@ void updateInfluxDB()
 #endif
 
 void mqttHAPublish_Config (String HADiscoveryTopic, String ValueTopicName, String SensorName, String friendlySensorName, int unitClass, String cmd_temp){
+  #ifdef enableMQTT
+  #include "configmqtttopics.h"
+  String mqttdeviceid = String(BASE_TOPIC);
   String HAClass;
   switch (unitClass) {
     case mqtt_HAClass_temperature:   HAClass = F("\"dev_cla\":\"temperature\",\"unit_of_meas\": \"°C\",\"ic\": \"mdi:thermometer\","); break;
@@ -1342,18 +1225,19 @@ void mqttHAPublish_Config (String HADiscoveryTopic, String ValueTopicName, Strin
     default:                         HAClass = "\0"; break;
   }
   mqttclient.publish((HADiscoveryTopic + F("_") + mqttident + SensorName + F("/config")).c_str(), (F("{\"name\":\"") + mqttident + friendlySensorName + F("\",\"uniq_id\": \"") + mqttident + SensorName + F("\",\"stat_t\":\"") + ValueTopicName + F("\",\"val_tpl\":\"{{value_json.") + mqttident + SensorName +F("}}\",") + HAClass + F("\"qos\":") + mqttQOS + F(",") + mqttdeviceid + F("}")).c_str(), mqtt_Retain);
+  #endif
 }
 
+
 void updateMQTTData() {
+  #ifdef enableMQTT
+  #include "configmqtttopics.h"
+  String mqttdeviceid = String(BASE_TOPIC);
   const String payloadvalue_startend_val = F("\0"); // value added before and after value send to mqtt queue
-  mqttclient.setBufferSize(2048);
-
-
   String tmpbuilder = F("{");
   tmpbuilder += F("\"rssi\":")+ String(WiFi.RSSI());
   tmpbuilder += F(",\"CRT\":")+ String(runNumber);
   tmpbuilder += F(",\"uptime\":")+ String((millis())/1000);   //w sekundach
-
   if (NTherm != InitTemp) {tmpbuilder += F(",\"") + mqttident + OUTSIDE_TEMPERATURE_N + F("\": ") + payloadvalue_startend_val + String(NTherm) + payloadvalue_startend_val;}
   if (ETherm != InitTemp) {tmpbuilder += F(",\"") + mqttident + OUTSIDE_TEMPERATURE_E + F("\": ") + payloadvalue_startend_val + String(ETherm) + payloadvalue_startend_val;}
   if (WTherm != InitTemp) {tmpbuilder += F(",\"") + mqttident + OUTSIDE_TEMPERATURE_W + F("\": ") + payloadvalue_startend_val + String(WTherm) + payloadvalue_startend_val;}
@@ -1370,12 +1254,12 @@ void updateMQTTData() {
   tmpbuilder += F(",\"") + mqttident + BOILERROOM_PUMP2CO_E + F("\": ") + payloadvalue_startend_val + String(energy2used) + payloadvalue_startend_val;
   //pump status
   mqttclient.publish(BOILERROOM_SENSOR_TOPIC.c_str(),(tmpbuilder+F("}")).c_str(), mqtt_Retain);
+
   tmpbuilder = F("{");
   tmpbuilder += F("\"CRT\":")+ String(runNumber);
   tmpbuilder += F(",\"") + mqttident + BOILERROOM_PUMP1WA + F("\": ") + payloadvalue_startend_val + String(prgstatusrelay1WO?"\"ON\"":"\"OFF\"") + payloadvalue_startend_val;
   tmpbuilder += F(",\"") + mqttident + BOILERROOM_PUMP2CO + F("\": ") + payloadvalue_startend_val + String(prgstatusrelay2CO?"\"ON\"":"\"OFF\"") + payloadvalue_startend_val;   //getpumpstatus(2)
   mqttclient.publish(BOILERROOM_SWITCH_TOPIC.c_str(),(tmpbuilder+F("}")).c_str(), mqtt_Retain);
-
 
   publishhomeassistantconfig++; // zwiekszamy licznik wykonan wyslania mqtt by co publishhomeassistantconfigdivider wysłań wysłać autoconfig discovery dla homeassisatnt
   if (publishhomeassistantconfig % publishhomeassistantconfigdivider == 0)
@@ -1410,4 +1294,5 @@ void updateMQTTData() {
 
   // }
   log_message((char*)F("MQTT Data Sended..."));
+  #endif
 }
