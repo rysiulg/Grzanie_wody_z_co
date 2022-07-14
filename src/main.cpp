@@ -281,6 +281,32 @@ void ReadTemperatures()
   }
 }
 
+void updateDatatoWWW(bool dont_send_after_sync) //default false so if true than update
+{
+  #ifdef enableWebSocket
+  if (receivedwebsocketdata) return;
+    String ptr = "\0";
+  u_int i = 0;
+  AllSensorsStruct[i].placeholder = "uptimedana";
+  AllSensorsStruct[i].Value = String(uptimedana(0));
+  i++;
+  AllSensorsStruct[i].placeholder = "temp_NEWS";
+  AllSensorsStruct[i].Value = String(Temp_NEWS);
+  i++;
+  AllSensorsStruct[i].placeholder = "naglowekdane";
+  AllSensorsStruct[i].Value = String("naglowekdane");
+  i++;
+  AllSensorsStruct[i].placeholder = "Statusy";
+  AllSensorsStruct[i].Value = String(ptr);
+
+
+  if (!dont_send_after_sync) {
+    notifyClients(getValuesToWebSocket_andWebProcessor(ValuesToWSWPinJSON));
+  } else { receivedwebsocketdata = false; }
+  #endif
+}
+
+
 void displayCoCo()
 {
   display.print("COCO");

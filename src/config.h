@@ -23,7 +23,7 @@
 #define kondygnacja 0
 const uint8_t subpomieszczenie = 10;
 //#define newSensorT1 //dodatkowy sesnor
-const String me_lokalizacja = "COWoda_XX"+String(kondygnacja);//+"_mqqt_MARM";
+const String me_lokalizacja = "COWoda"+String(kondygnacja);//+"_mqqt_MARM";
 #define ATOMIC_FS_UPDATE
 #define MFG "MARM.pl Sp. z o.o."
 #define wwwport 80
