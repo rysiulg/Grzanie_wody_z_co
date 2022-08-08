@@ -1,12 +1,15 @@
 
 String BASE_TOPIC = me_lokalizacja; //jest niepelna -brakuje kondygnacji
 
+const u_int QOS = 0;
 
 const String LOG_TOPIC = BASE_TOPIC + "/log";
 const String WILL_TOPIC = BASE_TOPIC + "/Will";
 const String IP_TOPIC = BASE_TOPIC + "/IP";
 const String STATS_TOPIC = BASE_TOPIC + "/stats";
 
+#define WILL_ONLINE "Online"
+#define WILL_OFFLINE "Offline"
 
 const String BASE_HA_TOPIC = "homeassistant";
 const String OUTSIDE = "outside";
@@ -29,7 +32,7 @@ const String BOILERROOM_TEMPERATURE_T1 = BOILERROOM + TEMPERATURE + "_Spare";
 #endif
 const String HEATERCO_TEMPERATURE = BOILERROOM + TEMPERATURE + "_CO";
 const String WATER_TEMPERATURE = BOILERROOM + TEMPERATURE + "_Water";
-const String BOILERROOM_TEMPERATURE = BOILERROOM + TEMPERATURE;
+const String BOILERROOM_TEMPERATURE = BOILERROOM + TEMPERATURE + "_RoomTemp";
 const String BOILERROOM_PRESSURE = BOILERROOM + "_pressure";
 const String BOILERROOM_HIGH = BOILERROOM + "_high";
 const String BOILERROOM_HIGHREAL = BOILERROOM + "_highreal";
@@ -41,9 +44,9 @@ const String BOILERROOM_PUMP2CO_E = BOILERROOM + "_pump2CO_Energy";
 
 const String BOILERROOM_SWITCH_TOPIC = BASE_TOPIC + SWITCH + BOILERROOM + "/attributes";
 const String BOILERROOM_SWITCH_TOPIC_SET = BASE_TOPIC + SWITCH + BOILERROOM + "/set";
-const String BOILERROOM_HA_SWITCH_TOPIC = BASE_HA_TOPIC + SWITCH + BASE_TOPIC + "/" + BOILERROOM;     //+"/state"
+const String BOILERROOM_HA_SWITCH_TOPIC = BASE_HA_TOPIC + SWITCH + BASE_TOPIC + "/";     //+"/state"
 const String BOILERROOM_SENSOR_TOPIC = BASE_TOPIC + SENSOR + BOILERROOM + "/attributes";
-const String BOILERROOM_HA_SENSOR_TOPIC = BASE_HA_TOPIC + SENSOR + BASE_TOPIC + "/" + BOILERROOM;     //+"/state"
+const String BOILERROOM_HA_SENSOR_TOPIC = BASE_HA_TOPIC + SENSOR + BASE_TOPIC + "/";     //+"/state"
 //Subscribe
 String SUPLA_VOLT_TOPIC = "electricmain/supla/devices/zamel-mew-01-99a200/channels/0/state/phases/3/voltage";
 String SUPLA_FREQ_TOPIC = "electricmain/supla/devices/zamel-mew-01-99a200/channels/0/state/phases/3/frequency";
@@ -95,7 +98,8 @@ String SUPLA_FREQ_TOPIC = "electricmain/supla/devices/zamel-mew-01-99a200/channe
 // const String MODE_SET_TOPIC = BASE_TOPIC + "/SET/" + BOILER_SOFTWARE_CH_STATE_MODE + "/set";         // 012 auto, heat, off ch
 // const String TEMP_DHW_SET_TOPIC = BASE_TOPIC + "/SET/" + HOT_WATER_TEMPERATURE_SETPOINT + "/set";    // dhwTarget
 // String COPUMP_GET_TOPIC = "COWoda_mqqt_MARM/switch/bcddc2b2c08e/pump2CO/state";                      // temperatura outside avg NEWS
-// String NEWS_GET_TOPIC = "COWoda_mqqt_MARM/sensor/bcddc2b2c08e/WENS_Outside_Temp_AVG/state";          // pompa CO status
+String NEWS_GET_TOPIC = "COWoda_mqqt_MARM/sensor/bcddc2b2c08e/WENS_Outside_Temp_AVG/state";          // pompa CO status
+String NEWStemp_json = "xxx";
 // String BOILER_FLAME_STATUS_TOPIC = "opentherm-thermostat/boiler/attributes";                              //flme status of co gaz boiler
 // String BOILER_FLAME_STATUS_ATTRIBUTE = "ot_flame_state";                              //boiler flame status of co gaz boiler
 // String BOILER_COPUMP_STATUS_ATTRIBUTE = "ot_boiler_ch_state";                          //boiler pump status

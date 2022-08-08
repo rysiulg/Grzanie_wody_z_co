@@ -26,33 +26,26 @@
 //*************************************************
 // pins
 
-//#include "SPIFFS.h"
-//#include <LittleFS.h>
-//#define SPIFFS LITTLEFS
-
 //*************************************************0x28, 0xFF, 0x4B, 0x72, 0x80, 0x14, 0x02, 0x77
 #include "main.h"
 
 //*************************************************
-#ifdef enableMQTT
-  #include "configmqtttopics.h"
-#endif
-#include "common_functions.h"
-#include "funkcje.h"
-#include "configPortal.h"
+
 
 void setup()
 {
 //#if defined(debug) or defined(debug1)
-  Serial.begin(74880);
-  Serial.print("\nStarting Async_AutoConnect_ESP8266_minimal on " + String(ARDUINO_BOARD) + String("  "));
- // #endif
-  // first get total memory before we do anything
-  getFreeMemory();
-  #ifdef doubleResDet
-  // double reset detect from start
-  doubleResetDetect();
-  #endif
+//   Serial.begin(74880);
+//   Serial.print("\nStarting Async_AutoConnect_ESP8266_minimal on " + String(ARDUINO_BOARD) + String("  "));
+//  // #endif
+//   // first get total memory before we do anything
+//   getFreeMemory();
+//   #ifdef doubleResDet
+//   // double reset detect from start
+//   doubleResetDetect();
+//   #endif
+
+  MainCommonSetup();
 
   Serial.print(F("Sketch free space: "));
   Serial.println(ESP.getFreeSketchSpace());
@@ -72,22 +65,6 @@ void setup()
 #ifdef debug
   Serial.println("display initialized...");
 #endif
-
-  if (loadConfig())
-  {
-    Serial.println(F("Config loaded:"));
-    Serial.println(CONFIGURATION.version);
-    Serial.println(CONFIGURATION.ssid);
-    Serial.println(CONFIGURATION.pass);
-    Serial.println(CONFIGURATION.mqtt_server);
-  }
-  else
-  {
-    Serial.println(F("Config not loaded!"));
-    SaveConfig(); // overwrite with the default settings
-  }
-
-  MainCommonSetup();
 
 
   // Jako parametr mozemy podav dokladnosc - domyslnie 3
@@ -118,11 +95,11 @@ void setup()
   Ro = MQCalibration(gas_ain);
   getCOGAS(gas_ain);
 #ifdef debug
-  Serial.println("gas ok...");
+  log_message((char*)F("gas ok..."));
 #endif
 
 #ifdef debug
-  Serial.println("end setup....");
+  log_message((char*)F("end setup...."));
   //    SaveConfig();
 #endif
 
@@ -170,6 +147,7 @@ void ReadEnergyUsed()
 
 void ReadTemperatures()
 {
+  log_message((char*)F("Read Temperatures starting"));
   if ((millis() - lastReadTimeTemps) > ReadTimeTemps or lastReadTimeTemps == 0)
   {
     lastReadTimeTemps = millis();
@@ -194,7 +172,7 @@ void ReadTemperatures()
     for (int j = 0; j < count; j++)
     {
       temp1w = sensors.getTempCByIndex(j);
-      if (temp1w == DS18B20nodata or temp1w == DS18B20nodata2 or temp1w == DS18B20nodata3 or temp1w == DS18B20nodata4 or temp1w == InitTemp)
+      if (!check_isValidTemp(temp1w))
         { temp1w = InitTemp; }
       addrstr = "";
       sensors.getAddress(addr, j);
@@ -210,25 +188,25 @@ void ReadTemperatures()
       addrstr.toUpperCase();
       sensors.setResolution(addr, 12);
 
-      String addstrtmp = String(DallSens1_addr); addstrtmp.toUpperCase(); addstrtmp.trim();
-      if (addrstr == addstrtmp) { if (temp1w != InitTemp) coTherm = temp1w; assignedsensor = true; }
-      addstrtmp = String(DallSens2_addr); addstrtmp.toUpperCase(); addstrtmp.trim();
-      if (addrstr == addstrtmp) { if (temp1w != InitTemp) waterTherm = temp1w; assignedsensor = true; }
-      addstrtmp = String(DallSens3_addr); addstrtmp.toUpperCase(); addstrtmp.trim();
-      if (addrstr == addstrtmp) { if (temp1w != InitTemp) NTherm = temp1w; assignedsensor = true; }
-      addstrtmp = String(DallSens4_addr); addstrtmp.toUpperCase(); addstrtmp.trim();
-      if (addrstr == addstrtmp) { if (temp1w != InitTemp) WTherm = temp1w; assignedsensor = true; }
-      addstrtmp = String(DallSens5_addr); addstrtmp.toUpperCase(); addstrtmp.trim();
-      if (addrstr == addstrtmp) { if (temp1w != InitTemp) ETherm = temp1w; assignedsensor = true; }
-      addstrtmp = String(DallSens6_addr); addstrtmp.toUpperCase(); addstrtmp.trim();
-      if (addrstr == addstrtmp) { if (temp1w != InitTemp) STherm = temp1w; assignedsensor = true; }
+      String addstrtmp = String(coThermometerAddr); addstrtmp.toUpperCase(); addstrtmp.trim();
+      if (addrstr == addstrtmp) { if (check_isValidTemp(temp1w)) coTherm = temp1w; assignedsensor = true; }
+      addstrtmp = String(waterThermometerAddr); addstrtmp.toUpperCase(); addstrtmp.trim();
+      if (addrstr == addstrtmp) { if (check_isValidTemp(temp1w)) waterTherm = temp1w; assignedsensor = true; }
+      addstrtmp = String(NThermAddr); addstrtmp.toUpperCase(); addstrtmp.trim();
+      if (addrstr == addstrtmp) { if (check_isValidTemp(temp1w)) NTherm = temp1w; assignedsensor = true; }
+      addstrtmp = String(WThermAddr); addstrtmp.toUpperCase(); addstrtmp.trim();
+      if (addrstr == addstrtmp) { if (check_isValidTemp(temp1w)) WTherm = temp1w; assignedsensor = true; }
+      addstrtmp = String(EThermAddr); addstrtmp.toUpperCase(); addstrtmp.trim();
+      if (addrstr == addstrtmp) { if (check_isValidTemp(temp1w)) ETherm = temp1w; assignedsensor = true; }
+      addstrtmp = String(SThermAddr); addstrtmp.toUpperCase(); addstrtmp.trim();
+      if (addrstr == addstrtmp) { if (check_isValidTemp(temp1w)) STherm = temp1w; assignedsensor = true; }
 
-      if (!assignedsensor and UnassignedTempSensor.indexOf(addrstr) == -1 and temp1w != InitTemp) UnassignedTempSensor += String(addrstr) + " : " + String(temp1w) + "\n";  //
+      if (!assignedsensor and UnassignedTempSensor.indexOf(addrstr) == -1 and check_isValidTemp(temp1w)) UnassignedTempSensor += String(addrstr) + " : " + String(temp1w) + "\n";  //
       assignedsensor = false;
-      if (temp1w != InitTemp) temptmp += "       " + String(j) + ": 18B20 ROM= " + addrstr + ", temp: " + String(temp1w, 2) + "\n";
+      if (check_isValidTemp(temp1w)) temptmp += "       " + String(j) + ": 18B20 ROM= " + addrstr + ", temp: " + String(temp1w, 2) + "\n";
     }
-    OutsideTempAvg = ((NTherm == InitTemp ? 0 : NTherm) + (ETherm == InitTemp ? 0 : ETherm) + (WTherm == InitTemp ? 0 : WTherm) + (STherm == InitTemp ? 0 : STherm)) / ((NTherm == InitTemp ? 0 : 1) + (ETherm == InitTemp ? 0 : 1) + (WTherm == InitTemp ? 0 : 1) + (STherm == InitTemp ? 0 : 1));
-    if (isnan(OutsideTempAvg)) OutsideTempAvg = InitTemp;
+    OutsideTempAvg = ((!check_isValidTemp(NTherm) ? 0 : NTherm) + (!check_isValidTemp(ETherm) ? 0 : ETherm) + (!check_isValidTemp(WTherm) ? 0 : WTherm) + (!check_isValidTemp(STherm) ? 0 : STherm)) / ((!check_isValidTemp(NTherm) ? 0 : 1) + (!check_isValidTemp(ETherm) ? 0 : 1) + (!check_isValidTemp(WTherm) ? 0 : 1) + (!check_isValidTemp(STherm) ? 0 : 1));
+    if (!check_isValidTemp(OutsideTempAvg)) OutsideTempAvg = InitTemp;
     log_message((char *)temptmp.c_str());
     UnassignedTempSensor.trim();
     if (UnassignedTempSensor != "")
@@ -240,7 +218,7 @@ void ReadTemperatures()
   if (ExistBM280)
   {
     bmTemp = bmp.readTemperature();
-    if (isnan(bmTemp)) bmTemp = InitTemp;
+    if (!check_isValidTemp(bmTemp)) bmTemp = InitTemp;
     dbmpressval = bmp.readPressure() / 100;
     if (millis() % 50000 == 0)
     {
@@ -263,7 +241,7 @@ void ReadTemperatures()
     if (isnan(h) or isnan(t))
     {
       log_message((char *)F("Failed to read from DHT sensor!"));
-      // if (isnan(t)) t=InitTemp;
+      // if (!check_isValidTemp(t)) t=InitTemp;
       // if (isnan(h)) h=0;
     }
     else
@@ -281,31 +259,6 @@ void ReadTemperatures()
   }
 }
 
-void updateDatatoWWW(bool dont_send_after_sync) //default false so if true than update
-{
-  #ifdef enableWebSocket
-  if (receivedwebsocketdata) return;
-    String ptr = "\0";
-  u_int i = 0;
-  AllSensorsStruct[i].placeholder = "uptimedana";
-  AllSensorsStruct[i].Value = String(uptimedana(0));
-  i++;
-  AllSensorsStruct[i].placeholder = "temp_NEWS";
-  AllSensorsStruct[i].Value = String(Temp_NEWS);
-  i++;
-  AllSensorsStruct[i].placeholder = "naglowekdane";
-  AllSensorsStruct[i].Value = String("naglowekdane");
-  i++;
-  AllSensorsStruct[i].placeholder = "Statusy";
-  AllSensorsStruct[i].Value = String(ptr);
-
-
-  if (!dont_send_after_sync) {
-    notifyClients(getValuesToWebSocket_andWebProcessor(ValuesToWSWPinJSON));
-  } else { receivedwebsocketdata = false; }
-  #endif
-}
-
 
 void displayCoCo()
 {
@@ -313,32 +266,11 @@ void displayCoCo()
   display.blink();
 }
 
-void loop()
+uint counter = 0;
+
+void checkAndRunCommandBySwitch()
 {
-  MainCommonLoop();
-  counter++;
-
-  ReadTemperatures();
-  ReadEnergyUsed();
-
-  #ifdef wdtreset
-  wdt_reset();
-  #endif
-#ifdef enableWifiManager
-  if (initialConfig == true)
-  {
-#if defined(debug) or defined(debug1)
-    Serial.println(F("On demand config..."));
-#endif
-    // webserver.end();
-    // WiFi.disconnect();
-
-    count_nowifi = 0;
-    ondemandwifiCallback();
-  };
-#endif
-
-  bool C_W_read = digitalRead(wificonfig_pin);
+    bool C_W_read = digitalRead(wificonfig_pin);
   {
     if (C_W_read != last_C_W_state)
     {
@@ -377,6 +309,34 @@ void loop()
     };
     last_C_W_state = C_W_read;
   };
+}
+
+void loop()
+{
+  MainCommonLoop();
+  counter++;
+
+  ReadTemperatures();
+  ReadEnergyUsed();
+
+  #ifdef wdtreset
+  wdt_reset();
+  #endif
+#ifdef enableWifiManager
+  if (initialConfig == true)
+  {
+#if defined(debug) or defined(debug1)
+    Serial.println(F("On demand config..."));
+#endif
+    // webserver.end();
+    // WiFi.disconnect();
+
+    count_nowifi = 0;
+    ondemandwifiCallback();
+  };
+#endif
+
+  checkAndRunCommandBySwitch();
 
 
   if (shouldSaveConfig == true)
@@ -423,15 +383,14 @@ void loop()
     // check_temps_pumps();
   }
 
-  if (counter % (10 * last_case + what_display) * 2.3 == 0 or firstrun == true)
+  if (counter % (10 * last_case + what_display) * 2.3 == 0 or millis() < 1000)
   { // 4casy
-    firstrun = false;
     display_temp_rotation();
   }
 
   if (counter % 100 == 0)
   {
-    Serial.println("check_temps_pumps();");
+    log_message((char *)F("check_temps_pumps();"));
     check_temps_pumps();
   }
 

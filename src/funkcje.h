@@ -1,16 +1,4 @@
 
-void array_to_string(byte array[], unsigned int len, char buffer[])
-{
-  for (unsigned int i = 0; i < len; i++)
-  {
-    byte nib1 = (array[i] >> 4) & 0x0F;
-    byte nib2 = (array[i] >> 0) & 0x0F;
-    buffer[i * 2 + 0] = nib1  < 0xA ? '0' + nib1  : 'A' + nib1  - 0xA;
-    buffer[i * 2 + 1] = nib2  < 0xA ? '0' + nib2  : 'A' + nib2  - 0xA;
-  }
-  buffer[len * 2] = '\0';
-}
-
 void hw_wdt_disable(){
   *((volatile uint32_t*) 0x60000900) &= ~(1); // Hardware WDT OFF
 }
@@ -47,63 +35,18 @@ byte nibble(char c)
   return 0;  // Nmqttident a valid hexadecimal character
 }
 
-void hexCharacterStringToBytes(byte *byteArray, const char *hexString) {
-  bool oddLength = strlen(hexString) & 1;
-
-  byte currentByte = 0;
-  byte byteIndex = 0;
-
-  for (byte charIndex = 0; charIndex < strlen(hexString); charIndex++)
-  {
-    bool oddCharIndex = charIndex & 1;
-
-    if (oddLength)
-    {
-      // If the length is odd
-      if (oddCharIndex)
-      {
-        // odd characters go in high nibble
-        currentByte = nibble(hexString[charIndex]) << 4;
-      }
-      else
-      {
-        // Even characters go into low nibble
-        currentByte |= nibble(hexString[charIndex]);
-        byteArray[byteIndex++] = currentByte;
-        currentByte = 0;
-      }
-    }
-    else
-    {
-      // If the length is even
-      if (!oddCharIndex)
-      {
-        // Odd characters go into the high nibble
-        currentByte = nibble(hexString[charIndex]) << 4;
-      }
-      else
-      {
-        // Odd characters go into low nibble
-        currentByte |= nibble(hexString[charIndex]);
-        byteArray[byteIndex++] = currentByte;
-        currentByte = 0;
-      }
-    }
-  }
-}
-
 //******************************************************************************************
-void saveConfigCallback() {
-#ifdef debug
-  Serial.println("Should save config");
-#endif
-  shouldSaveConfig = true;
-  SaveConfig();
-  SaveEnergy();
-  #ifdef debug
-    Serial.println("SaveConfigCallback saved configxxxxxxxxxxxxxxxxxxxxxx");
-  #endif
-}
+// void saveConfigCallback() {
+// #ifdef debug
+//   Serial.println("Should save config");
+// #endif
+//   shouldSaveConfig = true;
+//   SaveConfig();
+//   SaveEnergy();
+//   #ifdef debug
+//     Serial.println("SaveConfigCallback saved configxxxxxxxxxxxxxxxxxxxxxx");
+//   #endif
+// }
 
 String checkUnassignedSensors() {
   String nowe18baddr = F("<p>New unassigned:<br>");
@@ -196,8 +139,186 @@ String getpumpstatus(uint8_t pompa) {
   return "";
 }
 // Replaces placeholder with DHT values
-String processor(const String var) {
+
+String get_PlaceholderName(u_int i){    //replace specific placeholder -return String for specific ASS value  zestaw nazw z js i css i html dopasowania do liczb do łatwiejszego dopasowania
+ //get names by number to match www placeholders
+  switch(i) {
+    case ASS_uptimedana: return PSTR(ASS_uptimedanaStr); break;
+    case ASS_Statusy: return PSTR(ASS_StatusyStr); break;
+    case ASS_MemStats: return PSTR(ASS_MemStatsStr); break;
+
+    case ASS_temp_NEWS: return PSTR(ASS_temp_NEWSStr); break;
+    case ASS_lastNEWSSet: return PSTR(ASS_lastNEWSSetStr); break;
+    case ASS_forceCObelow: return PSTR(ASS_forceCObelowStr); break;
+    case ASS_opcohi: return PSTR(ASS_opcohiStr); break;
+
+    case ASS_bmTemp: return PSTR(ASS_bmTempStr); break;
+    case ASS_coTherm: return PSTR(ASS_coThermStr); break;
+    case ASS_waterTherm: return PSTR(ASS_waterThermStr); break;
+    case ASS_NTherm: return PSTR(ASS_NThermStr); break;
+    case ASS_ETherm: return PSTR(ASS_EThermStr); break;
+    case ASS_WTherm: return PSTR(ASS_WThermStr); break;
+    case ASS_STherm: return PSTR(ASS_SThermStr); break;
+    case ASS_coConstTempCutOff: return PSTR(ASS_coConstTempCutOffStr); break;
+    case ASS_dcoval: return PSTR(ASS_dcovalStr); break;
+    case ASS_forceCO: return PSTR(ASS_forceCOStr); break;
+    case ASS_forceWater: return PSTR(ASS_forceWaterStr); break;
+    case ASS_prgstatusrelay1WO: return PSTR(ASS_prgstatusrelay1WOStr); break;
+    case ASS_prgstatusrelay2CO: return PSTR(ASS_prgstatusrelay2COStr); break;
+    case ASS_najpierwCO: return PSTR(ASS_najpierwCOStr); break;
+    case ASS_dbmpressval: return PSTR(ASS_dbmpressvalStr); break;
+    case ASS_bm_high: return PSTR(ASS_bm_highStr); break;
+    case ASS_bm_high_real: return PSTR(ASS_bm_high_realStr); break;
+
+
+
+
+  }
+  return "\0";
+}
+
+void updateDatatoWWW_received(u_int i){ //update local var from received val from websocket -Received data from web and here are converted values to variables of local
+  sprintf(log_chars, "Received data nr: %s", String(i).c_str());
+  log_message(log_chars);
+  switch (i) {
+    case ASS_forceCObelow:
+      forceCObelow = PayloadtoValidFloat(String(ASS[i].Value), true, cutofflo, cutoffhi);
+      //lastcutOffTempSet = millis();
+      break;
+    case ASS_forceCO:
+      forceCO = PayloadStatus(ASS[i].Value, true);
+      break;
+    case ASS_forceWater:
+      forceWater = PayloadStatus(ASS[i].Value, true);
+      break;
+    case ASS_prgstatusrelay1WO:
+      prgstatusrelay1WO = PayloadStatus(ASS[i].Value, true);
+      break;
+    case ASS_prgstatusrelay2CO:
+      prgstatusrelay2CO = PayloadStatus(ASS[i].Value, true);
+      break;
+    case ASS_najpierwCO:
+      najpierwCO = PayloadStatus(ASS[i].Value, true);
+      break;
+  }
+}
+
+void updateDatatoWWW(){
+  sprintf(log_chars, "Update Data to www ");
+  log_message(log_chars);
+  String ptrS = "\0";
+  #ifdef enableWebSocket
+    SaveAssValue(ASS_Statusy, getlinki() );
+    SaveAssValue(ASS_lastNEWSSet,         uptimedana(lastReadTimeTemps) );
+    if (check_isValidTemp(OutsideTempAvg)) ptrS = String(OutsideTempAvg, decimalPlaces); else ptrS = noTempStr;
+    SaveAssValue(ASS_temp_NEWS, ptrS );
+    SaveAssValue(ASS_opcohi,              String(opcohi, decimalPlaces) );
+  // AllSensorsStruct[i].Value = String(ptr);
+    if (check_isValidTemp(bmTemp)) ptrS = String(bmTemp, decimalPlaces); else ptrS = noTempStr;
+    SaveAssValue(ASS_bmTemp, ptrS );
+    if (check_isValidTemp(coTherm)) ptrS = String(coTherm, decimalPlaces); else ptrS = noTempStr;
+    SaveAssValue(ASS_coTherm, ptrS );
+    if (check_isValidTemp(waterTherm)) ptrS = String(waterTherm, decimalPlaces); else ptrS = noTempStr;
+    SaveAssValue(ASS_waterTherm, ptrS );
+    if (check_isValidTemp(NTherm)) ptrS = String(NTherm, decimalPlaces); else ptrS = noTempStr;
+    SaveAssValue(ASS_NTherm, ptrS );
+    if (check_isValidTemp(ETherm)) ptrS = String(ETherm, decimalPlaces); else ptrS = noTempStr;
+    SaveAssValue(ASS_ETherm, ptrS );
+    if (check_isValidTemp(WTherm)) ptrS = String(WTherm, decimalPlaces); else ptrS = noTempStr;
+    SaveAssValue(ASS_WTherm, ptrS );
+    if (check_isValidTemp(STherm)) ptrS = String(STherm, decimalPlaces); else ptrS = noTempStr;
+    SaveAssValue(ASS_STherm, ptrS );
+    if (check_isValidTemp(coConstTempCutOff)) ptrS = String(coConstTempCutOff, decimalPlaces); else ptrS = noTempStr;
+    SaveAssValue(ASS_coConstTempCutOff, ptrS );
+    SaveAssValue(ASS_dcoval,              String(dcoval, decimalPlaces) );
+    SaveAssValue(ASS_forceCO,              String(forceCO?"1":"0") );
+    SaveAssValue(ASS_forceWater,              String(forceWater?"1":"0") );
+    SaveAssValue(ASS_prgstatusrelay1WO,              String(prgstatusrelay1WO?"1":"0") );
+    SaveAssValue(ASS_prgstatusrelay2CO,              String(prgstatusrelay2CO?"1":"0") );
+    SaveAssValue(ASS_najpierwCO,              String(najpierwCO?"1":"0") );
+    SaveAssValue(ASS_bm_high_real,              String(bm_high_real, decimalPlaces) );
+    SaveAssValue(ASS_bm_high,              String(bm_high, decimalPlaces) );
+    SaveAssValue(ASS_dbmpressval,              String(dbmpressval, decimalPlaces) );
+  #endif
+}
+
+
+String local_specific_web_processor_vars(String var) {
+  #ifdef debug
+  sprintf(log_chars,"Processing specific local processor: %s",var.c_str());
+  log_message(log_chars);
+  #endif
+  String ptr;
+  // if (var == "histlo") { return String(histlo, decimalPlaces);
+  // } else
+  // if (var == "histhi") { return String(histhi, decimalPlaces);
+  // } else
+
+    if (var == "stopkawebsite0") {
+      ptr =  F("<p><span class=\"units\" id=\"links\">")+String(getlinki())+F("</span></p>");
+      ptr += F("<p><br><span class='units'><a href='")+String(update_path)+F("' target=\"_blank\">")+String(Update_web_link)+F("</a> &nbsp; &nbsp;&nbsp;");
+      #ifdef enableWebSerial
+      ptr += "<a href='/webserial' target=\"_blank\">"+String(Web_Serial)+"</a>&nbsp;";
+      #endif
+      ptr += F("<br>&copy; ");
+//      ptr += stopka;
+  } else
+  if (var == "bodywstaw") {
+    ptr=F("<form action=\"/get\"><table>");
+//    ptr+="<table>";
+    ptr+=F("<p>")+String("tempicon")+F("<span class=\"dht-labels\">")+String(Temp_NEWS)+F("</span><B><span class=\"dht-labels-temp\" id=\"")+String("dallThermometerS")+F("\">&nbsp;<font color=\"Green\">")+(OutsideTempAvg==InitTemp?"--.-":String(OutsideTempAvg))+F("</font></span><sup class=\"units\">&deg;C</sup></B></p>");
+    ptr+=F("<tr><td>");
+    ptr+=F("<p>")+String("tempicon")+F("<span class=\"dht-labels\">")+String(Temp_COHeat)+F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String("dcoThermstat")+F("\">&nbsp;<font color=\"Blue\">")+(coTherm==InitTemp?"--.-":String(coTherm,1))+F("</font></span><sup class=\"units\">&deg;C</sup></B></p>");
+    ptr+=F("<td></td");
+    ptr+=F("<p>")+String("tempicon")+F("<span class=\"dht-labels\">")+String(Temp_WaterCOHeat)+F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String("dwaterThermstat")+F("\">&nbsp;<font color=\"blue\">")+(waterTherm==InitTemp?"--.-":String(waterTherm,1))+F("</font></span><sup class=\"units\">&deg;C</sup></B></p>");
+    ptr+=F("</td></tr>");
+    ptr+=F("<tr><td>");
+    ptr+="<p>"+String("ppmicon")+F("<span class=\"dht-labels\">")+String(pump)+F(" 1 ")+String(CO_heat)+F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String("dpump1")+F("\">&nbsp;")+String(getpumpstatus(1))+F("</span><sup class=\"units\"> </sup></B></p>");
+    ptr+=F("<td></td");
+    ptr+="<p>"+String("ppmicon")+F("<span class=\"dht-labels\">")+String(pump)+F(" 2 ")+String(water)+F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String("dpump2")+F("\">&nbsp;")+String(getpumpstatus(2))+F("</span><sup class=\"units\"> </sup></B></p>");
+    ptr+=F("</td></tr>");
+  } else
+if (var == "bodywstaw1") {
+    //if (NTherm==InitTemp) wart="--.--"; else wart=NTherm;
+    ptr+=F("<tr><td>");
+    ptr+=F("<p>")+String("attiicon")+F("<span class=\"dht-labels\">")+String(Attitude)+F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String("dbmhigh")+F("\">&nbsp;")+String(bm_high,0)+F("</span><sup class=\"units\">mnpm</sup></B></p>");
+    ptr+=F("<td></td");
+    ptr+=F("<p>")+String("attiicon")+F("<span class=\"dht-labels\">")+String(Attitude_real)+F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String("dbmhighr")+F("\">&nbsp;")+String(bm_high_real,0)+F("</span><sup class=\"units\">mnpm</sup></B></p>");
+    ptr+=F("</td></tr>");
+    ptr+=F("<tr><td>");
+    ptr+=F("<p>")+String("presicon")+F("<span class=\"dht-labels\">")+String(Pressure)+F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String("dbmpressure")+F("\">&nbsp;")+String(dbmpressval)+F("</span><sup class=\"units\">hPa</sup></B></p>");
+    ptr+=F("<td></td");
+    ptr+=F("<p>")+String("ppmicon")+F("<span class=\"dht-labels\">")+String(GAS_CO)+F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String("dcoS")+F("\">&nbsp;")+String(dcoval)+F("</span><sup class=\"units\">ppm</sup></B></p>");
+    ptr+=F("</td></tr>");
+    ptr+=F("<tr><td>");
+    //if (NTherm<-100 or NTherm>100) wart="-.--"; else wart=String(NTherm);
+    ptr+=String("<p>")+String("tempicon")+F("<span class=\"dht-labels\">")+String(Temp_N)+F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String("dNThermometerS")+F("\">&nbsp;")+(NTherm==InitTemp?"--.-":String(NTherm,1))+F("</span><sup class=\"units\">&deg;C</sup></B></p>");
+    ptr+=F("</td><td>");
+    //if (ETherm<-100 or ETherm>100) wart="-.--"; else wart=String(ETherm);
+    ptr+="<p>"+String("tempicon")+F("<span class=\"dht-labels\">")+String(Temp_E)+F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String("dEThermometerS")+F("\">&nbsp;")+(ETherm==InitTemp?"--.-":String(ETherm,1))+F("</span><sup class=\"units\">&deg;C</sup></B></p>");
+    ptr+=F("</td></tr><tr><td>");
+  } else
+if (var == "bodywstaw2") {
+    //if (WTherm<-100 or WTherm>100) wart="-.--"; else wart=String(WTherm);
+    ptr+=F("<p>")+String("tempicon")+F("<span class=\"dht-labels\">")+String(Temp_W)+F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String("dWThermometerS")+F("\">&nbsp;")+(WTherm==InitTemp?"--.-":String(WTherm,1))+F("</span><sup class=\"units\">&deg;C</sup></B></p>");
+    ptr+=F("</td><td>");
+    //if (STherm<-100 or STherm>100) wart="-.--"; else wart=String(ETherm);
+    ptr+=F("<p>")+String("tempicon")+F("<span class=\"dht-labels\">")+String(Temp_S)+F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String("dSThermometerS")+F("\">&nbsp;")+(STherm==InitTemp?"--.-":String(STherm,1))+F("</span><sup class=\"units\">&deg;C</sup></B></p>");
+    ptr+=F("</td></tr>");
+    ptr+=F("<tr><td>");
+    ptr+=F("<p>")+String("tempicon")+F("<span class=\"dht-labels\">")+String(Temp_BoilerRoom)+F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String("dbmtemperature")+F("\">&nbsp;")+String(bmTemp,1)+F("</span><sup class=\"units\">&deg;C</sup></B></p>");
+    ptr+=F("</td></tr>");
+    ptr+=F("</table></form>");
+    #ifdef debug
+    Serial.print(String(millis())+F(": www BODYWSTAW len: "));
+    Serial.println(ptr.length());
+    #endif
+  }
+  return ptr;
+}
+
   #ifndef enableWebSocket
+String processor(const String var) {
   #ifdef debug
   sprintf(log_chars,"Processing processor: %s",var.c_str());
   log_message(log_chars);
@@ -207,7 +328,7 @@ String processor(const String var) {
   #endif
   if (var == "ver") {
     String a = "</B>ESP CO Server dla: <B>" + String(me_lokalizacja) + "</B><BR>v. ";
-    a += me_version;
+    a += version;
     a += "<br><font size=\"2\" color=\"DarkGreen\">";
     #ifdef enableMQTT
     a += espClient.connected()? "MQTT "+String(msg_Connected)+": "+String(mqtt_server)+":"+String(mqtt_port) : "MQTT "+String(msg_disConnected)+": "+String(mqtt_server)+":"+String(mqtt_port) ;  //1 conn, 0 not conn
@@ -288,7 +409,7 @@ String processor(const String var) {
     a += F("</B>,&nbsp;&nbsp;WiFi (RSSI): <B>");
     a += WiFi.RSSI();
     a += F("dBm</b> CRT:");
-    a += String(runNumber);
+    a += String(CRTrunNumber);
     a += F("<br> Energy 1 used WO: <b>");
     a += String(energy1used,4);
     a += F("kWh</b>, Energy 2 used CO: <b>");
@@ -335,7 +456,7 @@ String processor(const String var) {
       ptr += "<a href='/webserial' target=\"_blank\">"+String(Web_Serial)+"</a>&nbsp;";
       #endif
       ptr += F("<br>&copy; ");
-      ptr += stopka;
+//      ptr += stopka;
     return ptr;
   }
   if (var == "bodywstaw") {
@@ -400,10 +521,10 @@ if (var == "bodywstaw2") {
   #ifdef debug
     Serial.print(F("End processor "));
 //    Serial.println(var);
-  #endif
+  #endif //debug
   return String("\0");
-  #endif
 }
+  #endif
 
 String do_stopkawebsite() {
       String ptr;
@@ -736,111 +857,111 @@ void gas_leak_check() {
     //      debugA("Gas leakage... steżenie: %d ppm",gasCOMeterS->getlast());
   }
 }
-bool loadConfig() {
+bool loadConfig_old() {
   // is it correct?
-  if (sizeof(CONFIGURATION)<1024) EEPROM.begin(1024); else EEPROM.begin(sizeof(CONFIGURATION)+128); //Size can be anywhere between 4 and 4096 bytes.
-  EEPROM.get(1,runNumber);
-  if (isnan(runNumber)) runNumber=0;
-  runNumber++;
-  EEPROM.get(1+sizeof(runNumber),energy1used);
-  if (isnan(energy1used)) energy1used = 0;
-  EEPROM.get(1+sizeof(runNumber)+sizeof(energy1used),energy2used);
-  if (isnan(energy2used)) energy2used = 0;
-  if (EEPROM.read(CONFIG_START + 0) == CONFIG_VERSION[0] &&
-      EEPROM.read(CONFIG_START + 1) == CONFIG_VERSION[1] &&
-      EEPROM.read(CONFIG_START + 2) == CONFIG_VERSION[2] &&
-      EEPROM.read(CONFIG_START + 3) == CONFIG_VERSION[3] &&
-      EEPROM.read(CONFIG_START + 4) == CONFIG_VERSION[4]){
+  // if (sizeof(CONFIGURATION)<1024) EEPROM.begin(1024); else EEPROM.begin(sizeof(CONFIGURATION)+128); //Size can be anywhere between 4 and 4096 bytes.
+  // EEPROM.get(1,CRTrunNumber);
+  // if (isnan(CRTrunNumber)) CRTrunNumber=0;
+  // CRTrunNumber++;
+  // EEPROM.get(1+sizeof(CRTrunNumber),energy1used);
+  // if (isnan(energy1used)) energy1used = 0;
+  // EEPROM.get(1+sizeof(CRTrunNumber)+sizeof(energy1used),energy2used);
+  // if (isnan(energy2used)) energy2used = 0;
+  // if (EEPROM.read(CONFIG_START + 0) == CONFIG_VERSION[0] &&
+  //     EEPROM.read(CONFIG_START + 1) == CONFIG_VERSION[1] &&
+  //     EEPROM.read(CONFIG_START + 2) == CONFIG_VERSION[2] &&
+  //     EEPROM.read(CONFIG_START + 3) == CONFIG_VERSION[3] &&
+  //     EEPROM.read(CONFIG_START + 4) == CONFIG_VERSION[4]){
 
-  // load (overwrite) the local configuration struct
-    for (unsigned int i=0; i<sizeof(configuration_type); i++){
-      *((char*)&CONFIGURATION + i) = EEPROM.read(CONFIG_START + i);
-    }
-    strcpy(ssid, CONFIGURATION.ssid);
-    strcpy(pass, CONFIGURATION.pass);
-    strcpy(mqtt_server, CONFIGURATION.mqtt_server);
-    strcpy(mqtt_user, CONFIGURATION.mqtt_user);
-    strcpy(mqtt_password, CONFIGURATION.mqtt_password);
-    mqtt_port = CONFIGURATION.mqtt_port;
-    najpierwCO = CONFIGURATION.najpierwCO;
-    if (najpierwCO == true) waitCOStartingmargin=millis();
-    coConstTempCutOff = CONFIGURATION.coConstTempCutOff;
-    forceCObelow = CONFIGURATION.forceCObelow;
-    histereza = CONFIGURATION.histereza;
-    forceWater = CONFIGURATION.forceWater;
-    forceCO = CONFIGURATION.forceCO;
+  // // load (overwrite) the local configuration struct
+  //   for (unsigned int i=0; i<sizeof(configuration_type); i++){
+  //     *((char*)&CONFIGURATION + i) = EEPROM.read(CONFIG_START + i);
+  //   }
+    // strcpy(ssid, CONFIGURATION.ssid);
+    // strcpy(pass, CONFIGURATION.pass);
+    // strcpy(mqtt_server, CONFIGURATION.mqtt_server);
+    // strcpy(mqtt_user, CONFIGURATION.mqtt_user);
+    // strcpy(mqtt_password, CONFIGURATION.mqtt_password);
+    // mqtt_port = CONFIGURATION.mqtt_port;
+    // najpierwCO = CONFIGURATION.najpierwCO;
+    // if (najpierwCO == true) waitCOStartingmargin=millis();
+    // coConstTempCutOff = CONFIGURATION.coConstTempCutOff;
+    // forceCObelow = CONFIGURATION.forceCObelow;
+    // histereza = CONFIGURATION.histereza;
+    // forceWater = CONFIGURATION.forceWater;
+    // forceCO = CONFIGURATION.forceCO;
 
-    return true; // return 1 if config loaded
-  }
+  //   return true; // return 1 if config loaded
+  // }
   //try get only my important values
 
   return false; // return 0 if config NOT loaded
 }
-void SaveConfig() {
-  //EEPROM.put(1, runNumber);
-  // EEPROM.put(1+sizeof(runNumber), energy1used);
-  // EEPROM.put(1+sizeof(runNumber)+sizeof(energy1used), energy2used);
+void SaveConfig_old() {
+  //EEPROM.put(1, CRTrunNumber);
+  // EEPROM.put(1+sizeof(CRTrunNumber), energy1used);
+  // EEPROM.put(1+sizeof(CRTrunNumber)+sizeof(energy1used), energy2used);
 
   log_message((char*)F("Saving config...........................prepare"));
   SaveEnergy();
   unsigned int temp =0;
   //firs read content of eeprom
   EEPROM.get(1,temp);
-  if (EEPROM.read(CONFIG_START + 0) == CONFIG_VERSION[0] &&
-      EEPROM.read(CONFIG_START + 1) == CONFIG_VERSION[1] &&
-      EEPROM.read(CONFIG_START + 2) == CONFIG_VERSION[2] &&
-      EEPROM.read(CONFIG_START + 3) == CONFIG_VERSION[3] &&
-      EEPROM.read(CONFIG_START + 4) == CONFIG_VERSION[4]){
-  // load (overwrite) the local configuration temp struct
-    for (unsigned int i=0; i<sizeof(configuration_type); i++){
-      *((char*)&CONFTMP + i) = EEPROM.read(CONFIG_START + i);
-    }
-  }
-  if (temp != runNumber ||
-      strcmp(CONFTMP.ssid, ssid) != 0 ||
-      strcmp(CONFTMP.pass, pass) != 0 ||
-      strcmp(CONFTMP.mqtt_server, mqtt_server) != 0 ||
-      strcmp(CONFTMP.mqtt_user, mqtt_user) != 0 ||
-      strcmp(CONFTMP.mqtt_password, mqtt_password) != 0 ||
-      CONFTMP.mqtt_port != mqtt_port ||
-      CONFTMP.coConstTempCutOff != coConstTempCutOff ||
-      CONFTMP.forceCObelow != forceCObelow  ||
-      CONFTMP.histereza != histereza ||
-      CONFTMP.forceWater != forceWater ||
-      CONFTMP.forceCO != forceCO) {  //skip save if runnumber = saved runnumber to avoid too much memory save and wear eeprom
-    EEPROM.put(1, runNumber);
-    //EEPROM.put(1+sizeof(runNumber), flame_used_power_kwh);
+  // if (EEPROM.read(CONFIG_START + 0) == CONFIG_VERSION[0] &&
+  //     EEPROM.read(CONFIG_START + 1) == CONFIG_VERSION[1] &&
+  //     EEPROM.read(CONFIG_START + 2) == CONFIG_VERSION[2] &&
+  //     EEPROM.read(CONFIG_START + 3) == CONFIG_VERSION[3] &&
+  //     EEPROM.read(CONFIG_START + 4) == CONFIG_VERSION[4]){
+  // // load (overwrite) the local configuration temp struct
+  //   for (unsigned int i=0; i<sizeof(configuration_type); i++){
+  //     *((char*)&CONFTMP + i) = EEPROM.read(CONFIG_START + i);
+  //   }
+  // }
+  // if (temp != CRTrunNumber ||
+      // strcmp(CONFTMP.ssid, ssid) != 0 ||
+      // strcmp(CONFTMP.pass, pass) != 0 ||
+      // strcmp(CONFTMP.mqtt_server, mqtt_server) != 0 ||
+      // strcmp(CONFTMP.mqtt_user, mqtt_user) != 0 ||
+      // strcmp(CONFTMP.mqtt_password, mqtt_password) != 0 ||
+      // CONFTMP.mqtt_port != mqtt_port ||
+      // CONFTMP.coConstTempCutOff != coConstTempCutOff ||
+      // CONFTMP.forceCObelow != forceCObelow  ||
+      // CONFTMP.histereza != histereza ||
+      // CONFTMP.forceWater != forceWater ||
+      // CONFTMP.forceCO != forceCO) {  //skip save if CRTrunNumber = saved CRTrunNumber to avoid too much memory save and wear eeprom
+    // EEPROM.put(1, CRTrunNumber);
+    //EEPROM.put(1+sizeof(CRTrunNumber), flame_used_power_kwh);
     log_message((char*)F("Saving config........................... to EEPROM some data changed"));
 
-    strcpy(CONFIGURATION.version,CONFIG_VERSION);
-    strcpy(CONFIGURATION.ssid,ssid);
-    strcpy(CONFIGURATION.pass,pass);
-    strcpy(CONFIGURATION.mqtt_server,mqtt_server);
-    strcpy(CONFIGURATION.mqtt_user,mqtt_user);
-    strcpy(CONFIGURATION.mqtt_password,mqtt_password);
-    CONFIGURATION.mqtt_port = mqtt_port;
-    CONFIGURATION.najpierwCO = najpierwCO;
-    CONFIGURATION.coConstTempCutOff = coConstTempCutOff;
-    CONFIGURATION.forceCObelow = forceCObelow;
-    CONFIGURATION.histereza = histereza;
-    CONFIGURATION.forceWater = forceWater;
-    CONFIGURATION.forceCO = forceCO;
-    for (unsigned int i=0; i<sizeof(configuration_type); i++)
-      { EEPROM.write(CONFIG_START + i, *((char*)&CONFIGURATION + i)); }
-    EEPROM.commit();
-  }
+    // strcpy(CONFIGURATION.version,CONFIG_VERSION);
+    // strcpy(CONFIGURATION.ssid,ssid);
+    // strcpy(CONFIGURATION.pass,pass);
+    // strcpy(CONFIGURATION.mqtt_server,mqtt_server);
+    // strcpy(CONFIGURATION.mqtt_user,mqtt_user);
+    // strcpy(CONFIGURATION.mqtt_password,mqtt_password);
+    // CONFIGURATION.mqtt_port = mqtt_port;
+    // CONFIGURATION.najpierwCO = najpierwCO;
+    // CONFIGURATION.coConstTempCutOff = coConstTempCutOff;
+    // CONFIGURATION.forceCObelow = forceCObelow;
+    // CONFIGURATION.histereza = histereza;
+    // CONFIGURATION.forceWater = forceWater;
+    // CONFIGURATION.forceCO = forceCO;
+    // for (unsigned int i=0; i<sizeof(configuration_type); i++)
+    //   { EEPROM.write(CONFIG_START + i, *((char*)&CONFIGURATION + i)); }
+  //   EEPROM.commit();
+  // }
 }
 
 void SaveEnergy() {
    // ------------------------ energy config save --------------
   unsigned int temp = 0;
   EEPROM.get(1,temp);
-  if (temp != runNumber ) {EEPROM.put(1, runNumber);}
+  if (temp != CRTrunNumber ) {EEPROM.put(1, CRTrunNumber);}
   double dtemp =0;
-  EEPROM.get(1+sizeof(runNumber),dtemp);
-  if (dtemp != energy1used) {EEPROM.put(1+sizeof(runNumber), energy1used);}
-  EEPROM.get(1+sizeof(runNumber)+sizeof(energy1used),dtemp);
-  if (dtemp != energy2used) {EEPROM.put(1+sizeof(runNumber)+sizeof(energy1used), energy2used);}
+  EEPROM.get(1+sizeof(CRTrunNumber),dtemp);
+  if (dtemp != energy1used) {EEPROM.put(1+sizeof(CRTrunNumber), energy1used);}
+  EEPROM.get(1+sizeof(CRTrunNumber)+sizeof(energy1used),dtemp);
+  if (dtemp != energy2used) {EEPROM.put(1+sizeof(CRTrunNumber)+sizeof(energy1used), energy2used);}
   EEPROM.commit();
   log_message((char*)F("saved energy used... only if needed"));
 
@@ -920,119 +1041,117 @@ double getenergy(int adspin) {
 }
 
 
+String addusage_local_values_save(int EpromPosition){
+  SaveEnergy();
+  return "\0";
+}
+void addusage_local_values_load(String dane, int EpromPosition){
 
-#ifdef enableWebSerial
-void recvMsg(uint8_t *data, size_t len)
+}
+
+
+
+
+#if defined enableWebSerial || defined enableWebSocketlog
+String LocalVarsRemoteCommands(String command, size_t gethelp)
 { // for WebSerial
-  String d = "";
-  for (size_t i = 0; i < len; i++)
-  {
-    d += char(data[i]);
-  }
-  d.toUpperCase();
-  sprintf(log_chars,"Received Data on WebSerial...: %s", String(d).c_str());
+  //  d.toUpperCase();
+  sprintf(log_chars,"Received Data on WebSerial...: %s", String(command).c_str());
   log_message(log_chars);
-  if (d == "ON")
-  {
-    //  digitalWrite(LED, HIGH);
+  if (gethelp == remoteHelperMenu) {
+    return F(", RESET_FLAMETOTAL, ROOMTEMP0, ROOMTEMP+, ROOMTEMP-, USEDMEDIA, INCT");
   } else
-  if (d == "OFF")
+  if (gethelp == remoteHelperMenuCommand)
   {
-    //  digitalWrite(LED, LOW);
+    if (command.indexOf("ROOMTEMP0") >=0) {
+      log_message((char*)F("  ROOMTEMP0   -Przelacza temperature z pokoju na automat,"), logCommandResponse);
+    } else
+    if (command.indexOf("ROOMTEMP+") >=0) {
+      log_message((char*)F(" ROOMTEMP+  -Zwiększa wartość temperatury z pokoju o 0,5 stopnia,"), logCommandResponse);
+    } else
+    return F("OK");
   } else
-  if (d == "RESTART")
+  if (gethelp == remoteHelperCommand)
   {
-    WebSerial.print(String(millis())+": ");
-    WebSerial.println(F("OK. Restarting... by command..."));
-    restart();
-  } else
-  if (d == "RECONNECT")
-  {
-    mqtt_reconnect();
-  } else
-  if (d == "SAVE")
-  {
-    WebSerial.print(String(millis())+": ");
-    WebSerial.println(F("Saving config to EEPROM memory by command..."));
-    WebSerial.println("Size CONFIG: " + String(sizeof(CONFIGURATION)));
-    SaveConfig();
-  } else
-  if (d == "RESET_CONFIG")
-  {
-    WebSerial.print(String(millis())+": ");
-    WebSerial.println(F("RESET config to DEFAULT VALUES and restart..."));
-    WebSerial.println("Size CONFIG: " + String(sizeof(CONFIGURATION)));
-    CONFIGURATION.version[0] = 'R';
-    CONFIGURATION.version[1] = 'E';
-    CONFIGURATION.version[2] = 'S';
-    CONFIGURATION.version[3] = 'E';
-    CONFIGURATION.version[4] = 'T';
-    SaveConfig();
-    restart();
-  } else
-  if (d.indexOf("FORCECOBELOW") !=- 1)
-  {
-    String part = d.substring(d.indexOf(" "));
-    part.trim();
-    WebSerial.print(String(millis())+F(": ForceCOBelow: ")+String(forceCObelow)+F("   "));
-    if (d.indexOf(" ")!=-1) {
-      if (PayloadtoValidFloatCheck(part)) {forceCObelow = PayloadtoValidFloat(part,true,4,15);}
-      WebSerial.println(F(" -> ZMIENIONO NA: ")+String(forceCObelow)+F("    Payload: ")+String(d));
-    } else { WebSerial.println("");}
-  } else
-  if (d.indexOf("COCUTOFFTEMP") !=- 1)
-  {
-    String part = d.substring(d.indexOf(" "));
-    part.trim();
-    WebSerial.print(String(millis())+F(": COCUTOFFTEMP: ")+String(coConstTempCutOff)+F("   "));
-    if (d.indexOf(" ")!=-1) {
-      if (PayloadtoValidFloatCheck(part)) {coConstTempCutOff = PayloadtoValidFloat(part,true,20,40);}
-      WebSerial.println(F(" -> ZMIENIONO NA: ")+String(coConstTempCutOff)+F("    Payload: ")+String(d));
-    } else { WebSerial.println("");}
-  } else
-  if (d.indexOf("HIST") !=- 1)
-  {
-    String part = d.substring(d.indexOf(" "));
-    part.trim();
-    WebSerial.print(String(millis())+F(": HISTEREZA: ")+String(histereza)+F("   "));
-    if (d.indexOf(" ")!=-1) {
-      if (PayloadtoValidFloatCheck(part)) {histereza = PayloadtoValidFloat(part,true,-5,5);}
-      WebSerial.println(F(" -> ZMIENIONO NA: ")+String(histereza)+F("    Payload: ")+String(d));
-    } else {WebSerial.println("");}
-  } else
-  if (d.indexOf("FORCECO") !=- 1)
-  {
-    String part = d.substring(d.indexOf(" "));
-    part.trim();
-    WebSerial.print(String(millis())+F(": ForceCO: ")+String(forceCO?"ON":"OFF"));
-    if (d.indexOf(" ")!=-1) {
-      if (PayloadStatus(part,true)) {forceCO = true;} else if (PayloadStatus(part,false)) {forceCO = false;}
-      WebSerial.println(F(" -> ZMIENIONO NA: ")+String(forceCO?"ON":"OFF")+F("    Payload: ")+String(d));
-    } else {WebSerial.println("");}
-  } else
-  if (d.indexOf("FORCEWATER") !=- 1)
-  {
-    String part = d.substring(d.indexOf(" "));
-    part.trim();
-    WebSerial.print(String(millis())+F(": ForceWater: ")+String(forceWater?"ON":"OFF"));
-    if (d.indexOf(" ")!=-1) {
-      if (PayloadStatus(part,true)) {forceWater = true;} else if (PayloadStatus(part,false)) {forceWater = false;}
-      WebSerial.println(F(" -> ZMIENIONO NA: ")+String(forceWater?"ON":"OFF")+F("    Payload: ")+String(d));
-    } else {WebSerial.println("");}
-  } else
-  if (d.indexOf("LOG2MQTT") !=- 1)
-  {
-    String part = d.substring(d.indexOf(" "));
-    part.trim();
-    WebSerial.print(String(millis())+F(": LOG2MQTT: ")+String(sendlogtomqtt?"ON":"OFF"));
-    if (d.indexOf(" ")!=-1) {
-      if (PayloadStatus(part,true)) {sendlogtomqtt = true;} else if (PayloadStatus(part,false)) {sendlogtomqtt = false;}
-      WebSerial.println(F(" -> ZMIENIONO NA: ")+String(sendlogtomqtt?"ON":"OFF")+F("    Payload: ")+String(d));
-    } else {WebSerial.println("");}
-  }else
-  if (d == "HELP")
-  {
-    log_message((char*)F("KOMENDY:\n \
+    if (command == "USEDMEDIA")
+    {
+      //sprintf(log_chars, "Used Media: %s: %lfWh,    %llu\n   w tym woda: %lfWh,     %llu\n   w tym CO:   %lfWh,      %llu\n", Flame_total, 900090000*1000, 909000000, 900090000*1000, 900090000, 900090000*1000, 900090000);
+      // ptrS += String(Flame_total) + ": " + String() + "Wh,    " + String(  ) + "\n";      //uptimedana((flame_time_total), true) + "\n";
+      // ptrS += "" + String() + "" + String(   ) + "\n"; //uptimedana((flame_time_waterTotal), true) + "\n");
+      // ptrS += "" + String() + "" + String() + "\n";         //uptimedana((flame_time_CHTotal), true)+"\n");
+      log_message((char*)log_chars, logCommandResponse);
+    } else
+    if (command == "ON")
+    {
+      //  digitalWrite(LED, HIGH);
+    } else
+    if (command == "OFF")
+    {
+      //  digitalWrite(LED, LOW);
+    } else
+    if (command.indexOf("FORCECOBELOW") !=- 1)
+    {
+      String part = command.substring(command.indexOf(" "));
+      part.trim();
+      sprintf(log_chars, " ForceCOBelow: %s ", String(forceCObelow).c_str());
+      log_message(log_chars);
+      if (command.indexOf(" ")!=-1) {
+        if (PayloadtoValidFloatCheck(part)) {forceCObelow = PayloadtoValidFloat(part,true,4,15);}
+        sprintf(log_chars, "      -> ZMIENIONO NA: %s     Payload: %s", String(forceCObelow).c_str(), String(command).c_str());
+        log_message(log_chars);
+      } else { }
+    } else
+    if (command.indexOf("COCUTOFFTEMP") !=- 1)
+    {
+      String part = command.substring(command.indexOf(" "));
+      part.trim();
+      sprintf(log_chars, " COCUTOFFTEMP: %s", String(coConstTempCutOff).c_str());
+      log_message(log_chars);
+      if (command.indexOf(" ")!=-1) {
+        if (PayloadtoValidFloatCheck(part)) {coConstTempCutOff = PayloadtoValidFloat(part,true,20,40);}
+        sprintf(log_chars, "    -> ZMIENIONO NA: %s,   Payload: %s", String(coConstTempCutOff).c_str(), String(command).c_str());
+        log_message(log_chars);
+      } else { }
+    } else
+    if (command.indexOf("HIST") !=- 1)
+    {
+      String part = command.substring(command.indexOf(" "));
+      part.trim();
+      sprintf(log_chars, " histereza: %s", String(histereza).c_str());
+      log_message(log_chars);
+      if (command.indexOf(" ")!=-1) {
+        if (PayloadtoValidFloatCheck(part)) {histereza = PayloadtoValidFloat(part,true,-5,5);}
+        sprintf(log_chars, "  -> ZMIENIONO NA: %s,   Payload: %s", String(histereza).c_str(), String(command).c_str());
+        log_message(log_chars);
+      } else { }
+    } else
+    if (command.indexOf("FORCECO") !=- 1)
+    {
+      String part = command.substring(command.indexOf(" "));
+      part.trim();
+      sprintf(log_chars, " ForceCO: %s", String(forceCO?"ON":"OFF").c_str());
+      log_message(log_chars);
+      if (command.indexOf(" ")!=-1) {
+        if (PayloadStatus(part,true)) {forceCO = true;} else if (PayloadStatus(part,false)) {forceCO = false;}
+        sprintf(log_chars, " -> ZMIENIONO NA: %s, Payload: %s", String(forceCO?"ON":"OFF").c_str(), String(command).c_str());
+        log_message(log_chars);
+      } else { }
+    } else
+    if (command.indexOf("FORCEWATER") !=- 1)
+    {
+      String part = command.substring(command.indexOf(" "));
+      part.trim();
+      sprintf(log_chars, " ForceWater: %s", String(forceWater?"ON":"OFF").c_str());
+      log_message(log_chars);
+      if (command.indexOf(" ")!=-1) {
+        if (PayloadStatus(part,true)) {forceWater = true;} else if (PayloadStatus(part,false)) {forceWater = false;}
+        sprintf(log_chars, " -> ZMIENIONO NA: %s, Payload: %s", String(forceWater?"ON":"OFF").c_str(), String(command).c_str());
+        log_message(log_chars);
+      } else { }
+    } else
+    if (command == "HELP")
+    {
+      log_message((char*)F("KOMENDY:\n \
       FORCECOBELOW xx  -Zmienia wartość xx 'wymusza pompe CO poniżej temperatury średniej zewnetrznej', \n \
       COCUTOFFTEMP xx  -Zmienia wartość xx 'Temperatura graniczna na wymienniku oznacza ze piec sie grzeje',\n \
       HIST xx          -Zmienia wartość xx histerezy progu grzania,\n \
@@ -1043,256 +1162,106 @@ void recvMsg(uint8_t *data, size_t len)
       RECONNECT        -Dokonuje ponownej próby połączenia z bazami,\n \
       SAVE             -Wymusza zapis konfiguracji,\n \
       RESET_CONFIG     -UWAGA!!!! Resetuje konfigurację do wartości domyślnych"));
+    }
   }
-
-
+  return "\0";
 }
 #endif
 
-#ifdef enableMQTT
-void mqtt_callback(char *topic, byte *payload, unsigned int length)
-{
-  #include "configmqtttopics.h"
-  const String topicStr(topic);
-
-  String payloadStr = convertPayloadToStr(payload, length);
-
-//get Voltage on same phase
-  if (topicStr == SUPLA_VOLT_TOPIC)
-  {
-    String ident = String(millis())+F(": electricmain Volt ");
-    if (PayloadtoValidFloatCheck(payloadStr))
-    {
-      commonVolt = PayloadtoValidFloat(payloadStr,true);     //true to get output to serial and webserial atof(paylstr.c_str());
-      // char result[6];
-      // dtostrf(commonVolt, 4, 2, result);
-//      receivedmqttdata = true;    //makes every second run mqtt send and influx
-    }
-  } else
-//GET FREQ from supla
-  if (topicStr == SUPLA_FREQ_TOPIC)
-  {
-    String ident = String(millis())+F(": electricmain Frequency ");
-    if (PayloadtoValidFloatCheck(payloadStr))
-    {
-      commonFreq = PayloadtoValidFloat(payloadStr,true);     //true to get output to serial and webserial atof(paylstr.c_str());
-        // commonFreq = atof(paylstr.c_str());
-        // char result[6];
-        // dtostrf(commonFreq, 4, 2, result);
-    }
-  } else
-//PUMP1
-  if (topicStr == BOILERROOM_SWITCH_TOPIC_SET+"_"+BOILERROOM_PUMP1WA)
-  {
-    String ident = String(F("Boiler PUMP1 Wather. "));
-    payloadStr.toUpperCase();
-    ident += F("Set mode: ");
-    bool tmp = PayloadStatus(payloadStr, true) && !PayloadStatus(payloadStr, false);
-    if (tmp != prgstatusrelay1WO) receivedmqttdata = true;
-    if (PayloadStatus(payloadStr, true))
-    {
-      ownother=F("<B> MQTT pump1WO ")+payloadStr+F("</B>");
-      prgstatusrelay1WO = true;
-      forceWater = true;
-      forceCO = false;
-      najpierwCO = false;
-      ident += "WO mode " + payloadStr;
-    }
-    else if (PayloadStatus(payloadStr, false))
-    {
-      prgstatusrelay1WO = false;
-      forceWater = false;
-      forceCO = false;
-      najpierwCO = false;
-      ident +="WO mode " + payloadStr;
-    }
-    else {
-      ident += F(" unknkown ");
-    }
-    log_message((char*)ident.c_str());
-  } else
-//PUMP2
-  if (topicStr == BOILERROOM_SWITCH_TOPIC_SET+"_"+BOILERROOM_PUMP2CO)
-  {
-    String ident = F("Boiler PUMP2 CO. ");
-    payloadStr.toUpperCase();
-    ident += F("Set mode: ");
-    bool tmp = PayloadStatus(payloadStr, true) && !PayloadStatus(payloadStr, false);
-    if (tmp != prgstatusrelay2CO) receivedmqttdata = true;
-    if (PayloadStatus(payloadStr, true))
-    {
-      ownother=F("<B> MQTT pump2CO ")+payloadStr+F("</B>");
-      prgstatusrelay2CO = true;
-      forceCO = true;
-      waitCOStartingmargin=millis();
-      forceWater = false;
-      najpierwCO = true;
-      ident +="CO mode " + payloadStr;
-    }
-    else if (PayloadStatus(payloadStr, false))
-    {
-      prgstatusrelay2CO = false;
-      forceCO = false;
-      forceWater = false;
-      najpierwCO = false;
-      ident += "CO mode " + payloadStr;
-    }
-    else {
-      ident += F(" unknkown ");
-    }
-    log_message((char*)ident.c_str());
-  }
-   receivedmqttdata = false;
-}
-#endif
-
-void mqtt_reconnect_subscribe_list()
-{
-  #ifdef enableMQTT
-      mqttclient.subscribe(SUPLA_VOLT_TOPIC.c_str());
-      mqttclient.subscribe(SUPLA_FREQ_TOPIC.c_str());
-      mqttclient.subscribe((BOILERROOM_SWITCH_TOPIC_SET+"_"+BOILERROOM_PUMP1WA).c_str());
-      mqttclient.subscribe((BOILERROOM_SWITCH_TOPIC_SET+"_"+BOILERROOM_PUMP2CO).c_str());
-  #endif
-}
-
-#ifdef ENABLE_INFLUX
-void updateInfluxDB()
-{
-  #include "configmqtttopics.h"
-  if (InfluxClient.validateConnection())
-  {
-    sprintf(log_chars, "Connected to InfluxDB: %s", String(InfluxClient.getServerUrl()).c_str());
-    log_message(log_chars);
-  }
-  else
-  {
-    sprintf(log_chars, "InfluxDB connection failed: %s", String(InfluxClient.getLastErrorMessage()).c_str());
-    log_message(log_chars);
-  }
-  InfluxSensor.clearFields();
-  // Report RSSI of currently connected network
-  InfluxSensor.addField(mqttident + "rssi", (WiFi.RSSI()));
-  InfluxSensor.addField(mqttident + "CRT",  (runNumber));
-  InfluxSensor.addField(mqttident + "uptime",  ((millis())/1000));   //w sekundach
-
-  if (bmTemp != InitTemp) {InfluxSensor.addField(mqttident + String(BOILERROOM_TEMPERATURE), bmTemp);}
-  InfluxSensor.addField(mqttident + String(BOILERROOM_PRESSURE), dbmpressval);
-  InfluxSensor.addField(mqttident + String(BOILERROOM_HIGH), bm_high);
-  InfluxSensor.addField(mqttident + String(BOILERROOM_HIGHREAL), bm_high_real);
-  InfluxSensor.addField(mqttident + String(BOILERROOM_COVAL), dcoval);
-  if (coTherm != InitTemp) {InfluxSensor.addField(mqttident + String(HEATERCO_TEMPERATURE), coTherm);}
-  if (waterTherm != InitTemp) {InfluxSensor.addField(mqttident + String(WATER_TEMPERATURE), waterTherm);}
-  InfluxSensor.addField(mqttident + String(BOILERROOM_PUMP1WA), prgstatusrelay1WO?"1":"0");
-  InfluxSensor.addField(mqttident + String(BOILERROOM_PUMP1WA_E), energy1used);
-  InfluxSensor.addField(mqttident + String(BOILERROOM_PUMP2CO_E), energy2used);
-    InfluxSensor.addField(mqttident + String(BOILERROOM_PUMP2CO), prgstatusrelay2CO?"1":"0");
-  if (NTherm != InitTemp) {InfluxSensor.addField(mqttident + String(OUTSIDE_TEMPERATURE_N), NTherm);}
-  if (ETherm != InitTemp) {InfluxSensor.addField(mqttident + String(OUTSIDE_TEMPERATURE_E), ETherm);}
-  if (WTherm != InitTemp) {InfluxSensor.addField(mqttident + String(OUTSIDE_TEMPERATURE_W), WTherm);}
-  if (STherm != InitTemp) {InfluxSensor.addField(mqttident + String(OUTSIDE_TEMPERATURE_S), STherm);}
-  if (OutsideTempAvg != InitTemp) {InfluxSensor.addField(mqttident + String(OUTSIDE_TEMPERATURE_A), OutsideTempAvg);}
-
-  // Print what are we exactly writing
-  // don't why thi schanges isadslinitialised to true    sprintf(log_chars,"Writing to InfluxDB: %s", String(InfluxClient.pointToLineProtocol(InfluxSensor)).c_str());
-  //log_message(log_chars); //(char*)F("Writing to InfluxDB: "));
-  // Write point
-  if (!InfluxClient.writePoint(InfluxSensor))
-  {
-    sprintf(log_chars,"InfluxDB write failed: %s", String(InfluxClient.getLastErrorMessage()).c_str());
-  }
-}
-#endif
-
-void mqttHAPublish_Config (String HADiscoveryTopic, String ValueTopicName, String SensorName, String friendlySensorName, int unitClass, String cmd_temp){
-  #ifdef enableMQTT
-  #include "configmqtttopics.h"
-  String mqttdeviceid = String(BASE_TOPIC);
-  String HAClass;
-  switch (unitClass) {
-    case mqtt_HAClass_temperature:   HAClass = F("\"dev_cla\":\"temperature\",\"unit_of_meas\": \"°C\",\"ic\": \"mdi:thermometer\","); break;
-    case mqtt_HAClass_pressure:      HAClass = F("\"dev_cla\":\"pressure\",\"unit_of_meas\": \"hPa\",\"ic\": \"mdi:mdiCarSpeedLimiter\",");  break; //cbar, bar, hPa, inHg, kPa, mbar, Pa, psi
-    case mqtt_HAClass_humidity:      HAClass = F("\"dev_cla\":\"humidity\",\"unit_of_meas\": \"%\",\"ic\": \"mdi:mdiWavesArrowUp\","); break;
-    case mqtt_HAClass_energy:        HAClass = F("\"dev_cla\":\"energy\",\"unit_of_meas\": \"kWh\",\"state_class\":\"total_increasing\",\"ic\": \"mdi:lightning-bolt-circle\","); break; //energy: Wh, kWh, MWh	Energy, statistics will be stored in kWh. Represents power over time. Nmqttident to be confused with power.  power: W, kW	Power, statistics will be stored in W.
-//    case mqtt_HAClass_power:         HAClass = F("\"dev_cla\":\"power\",\"unit_of_meas\": \"W\",\"ic\": \"mdi:alpha-W-box\","); break; //energy: Wh, kWh, MWh	Energy, statistics will be stored in kWh. Represents power over time. Nmqttident to be confused with power.  power: W, kW	Power, statistics will be stored in W.
-//    case mqtt_HAClass_voltage:       HAClass = F("\"dev_cla\":\"voltage\",\"unit_of_meas\": \"V\",\"ic\": \"mdi:alpha-v-box\","); break; //energy: Wh, kWh, MWh	Energy, statistics will be stored in kWh. Represents power over time. Nmqttident to be confused with power.  power: W, kW	Power, statistics will be stored in W.
-//    case mqtt_HAClass_current:       HAClass = F("\"dev_cla\":\"current\",\"unit_of_meas\": \"A\",\"ic\": \"mdi:alpha-a-box\","); break; //energy: Wh, kWh, MWh	Energy, statistics will be stored in kWh. Represents power over time. Nmqttident to be confused with power.  power: W, kW	Power, statistics will be stored in W.
-//    case mqtt_HAClass_freq:          HAClass = F("\"dev_cla\":\"frequency\",\"unit_of_meas\": \"Hz\",\"ic\": \"mdi:sine-wave\","); break; //energy: Wh, kWh, MWh	Energy, statistics will be stored in kWh. Represents power over time. Nmqttident to be confused with power.  power: W, kW	Power, statistics will be stored in W.
-    case mqtt_HAClass_high:          HAClass = F("\"unit_of_meas\": \"m\",\"ic\": \"mdi:speedometer-medium\","); break;
-    case mqtt_HAClass_co:            HAClass = F("\"dev_cla\":\"carbon_monoxide\",\"unit_of_meas\": \"ppm\",\"ic\": \"mdi:molecule-co\","); break;
-    case mqtt_HAClass_switch:        HAClass = F("\"pl_off\":\"OFF\",\"pl_on\":\"ON\",");
-                                     if (cmd_temp.length()>0) {HAClass +=F("\"cmd_t\":\"") + cmd_temp + F("_") + SensorName + F("\",");} break;
-    default:                         HAClass = "\0"; break;
-  }
-  mqttclient.publish((HADiscoveryTopic + F("_") + mqttident + SensorName + F("/config")).c_str(), (F("{\"name\":\"") + mqttident + friendlySensorName + F("\",\"uniq_id\": \"") + mqttident + SensorName + F("\",\"stat_t\":\"") + ValueTopicName + F("\",\"val_tpl\":\"{{value_json.") + mqttident + SensorName +F("}}\",") + HAClass + F("\"qos\":") + mqttQOS + F(",") + mqttdeviceid + F("}")).c_str(), mqtt_Retain);
-  #endif
-}
 
 
-void updateMQTTData() {
-  #ifdef enableMQTT
-  #include "configmqtttopics.h"
-  String mqttdeviceid = String(BASE_TOPIC);
-  const String payloadvalue_startend_val = F("\0"); // value added before and after value send to mqtt queue
-  String tmpbuilder = F("{");
-  tmpbuilder += F("\"rssi\":")+ String(WiFi.RSSI());
-  tmpbuilder += F(",\"CRT\":")+ String(runNumber);
-  tmpbuilder += F(",\"uptime\":")+ String((millis())/1000);   //w sekundach
-  if (NTherm != InitTemp) {tmpbuilder += F(",\"") + mqttident + OUTSIDE_TEMPERATURE_N + F("\": ") + payloadvalue_startend_val + String(NTherm) + payloadvalue_startend_val;}
-  if (ETherm != InitTemp) {tmpbuilder += F(",\"") + mqttident + OUTSIDE_TEMPERATURE_E + F("\": ") + payloadvalue_startend_val + String(ETherm) + payloadvalue_startend_val;}
-  if (WTherm != InitTemp) {tmpbuilder += F(",\"") + mqttident + OUTSIDE_TEMPERATURE_W + F("\": ") + payloadvalue_startend_val + String(WTherm) + payloadvalue_startend_val;}
-  if (STherm != InitTemp) {tmpbuilder += F(",\"") + mqttident + OUTSIDE_TEMPERATURE_S + F("\": ") + payloadvalue_startend_val + String(STherm) + payloadvalue_startend_val;}
-  if (OutsideTempAvg != InitTemp) {tmpbuilder += F(",\"") + mqttident + OUTSIDE_TEMPERATURE_A + F("\": ") + payloadvalue_startend_val + String(OutsideTempAvg) + payloadvalue_startend_val;}
-  if (coTherm != InitTemp) {tmpbuilder += F(",\"") + mqttident + HEATERCO_TEMPERATURE + F("\": ") + payloadvalue_startend_val + String(coTherm) + payloadvalue_startend_val;}
-  if (waterTherm != InitTemp) {tmpbuilder += F(",\"") + mqttident + WATER_TEMPERATURE + F("\": ") + payloadvalue_startend_val + String(waterTherm) + payloadvalue_startend_val;}
-  if (bmTemp != InitTemp) {tmpbuilder += F(",\"") + mqttident + BOILERROOM_TEMPERATURE + F("\": ") + payloadvalue_startend_val + String(bmTemp) + payloadvalue_startend_val;}
-  tmpbuilder += F(",\"") + mqttident + BOILERROOM_PRESSURE + F("\": ") + payloadvalue_startend_val + String(dbmpressval) + payloadvalue_startend_val;
-  tmpbuilder += F(",\"") + mqttident + BOILERROOM_HIGH + F("\": ") + payloadvalue_startend_val + String(bm_high) + payloadvalue_startend_val;
-  tmpbuilder += F(",\"") + mqttident + BOILERROOM_HIGHREAL + F("\": ") + payloadvalue_startend_val + String(bm_high_real) + payloadvalue_startend_val;
-  tmpbuilder += F(",\"") + mqttident + BOILERROOM_COVAL + F("\": ") + payloadvalue_startend_val + String(dcoval) + payloadvalue_startend_val;
-  tmpbuilder += F(",\"") + mqttident + BOILERROOM_PUMP1WA_E + F("\": ") + payloadvalue_startend_val + String(energy1used) + payloadvalue_startend_val;
-  tmpbuilder += F(",\"") + mqttident + BOILERROOM_PUMP2CO_E + F("\": ") + payloadvalue_startend_val + String(energy2used) + payloadvalue_startend_val;
-  //pump status
-  mqttclient.publish(BOILERROOM_SENSOR_TOPIC.c_str(),(tmpbuilder+F("}")).c_str(), mqtt_Retain);
+// void mqttHAPublish_Config (String HADiscoveryTopic, String ValueTopicName, String SensorName, String friendlySensorName, int unitClass, String cmd_temp){
+//   #ifdef enableMQTT
+//   #include "configmqtttopics.h"
+//   const String deviceid = "\"dev\":{\"ids\":\""+String(me_lokalizacja)+"\",\"name\":\""+String(me_lokalizacja)+"\",\"sw\":\"" + String(version) + "\",\"mdl\": \""+String(me_lokalizacja)+"\",\"mf\":\"" + String(MFG) + "\"}";
+//   const String payloadvalue_startend_val = F(""); // value added before and after value send to mqtt queue
+//   const String payloadON = F("1");
+//   const String payloadOFF = F("0");
+//   String HAClass;
+//   switch (unitClass) {
+//     case mqtt_HAClass_temperature:   HAClass = F("\"dev_cla\":\"temperature\",\"unit_of_meas\": \"°C\",\"ic\": \"mdi:thermometer\","); break;
+//     case mqtt_HAClass_pressure:      HAClass = F("\"dev_cla\":\"pressure\",\"unit_of_meas\": \"hPa\",\"ic\": \"mdi:mdiCarSpeedLimiter\",");  break; //cbar, bar, hPa, inHg, kPa, mbar, Pa, psi
+//     case mqtt_HAClass_humidity:      HAClass = F("\"dev_cla\":\"humidity\",\"unit_of_meas\": \"%\",\"ic\": \"mdi:mdiWavesArrowUp\","); break;
+//     case mqtt_HAClass_energy:        HAClass = F("\"dev_cla\":\"energy\",\"unit_of_meas\": \"kWh\",\"state_class\":\"total_increasing\",\"ic\": \"mdi:lightning-bolt-circle\","); break; //energy: Wh, kWh, MWh	Energy, statistics will be stored in kWh. Represents power over time. Nmqttident to be confused with power.  power: W, kW	Power, statistics will be stored in W.
+// //    case mqtt_HAClass_power:         HAClass = F("\"dev_cla\":\"power\",\"unit_of_meas\": \"W\",\"ic\": \"mdi:alpha-W-box\","); break; //energy: Wh, kWh, MWh	Energy, statistics will be stored in kWh. Represents power over time. Nmqttident to be confused with power.  power: W, kW	Power, statistics will be stored in W.
+// //    case mqtt_HAClass_voltage:       HAClass = F("\"dev_cla\":\"voltage\",\"unit_of_meas\": \"V\",\"ic\": \"mdi:alpha-v-box\","); break; //energy: Wh, kWh, MWh	Energy, statistics will be stored in kWh. Represents power over time. Nmqttident to be confused with power.  power: W, kW	Power, statistics will be stored in W.
+// //    case mqtt_HAClass_current:       HAClass = F("\"dev_cla\":\"current\",\"unit_of_meas\": \"A\",\"ic\": \"mdi:alpha-a-box\","); break; //energy: Wh, kWh, MWh	Energy, statistics will be stored in kWh. Represents power over time. Nmqttident to be confused with power.  power: W, kW	Power, statistics will be stored in W.
+// //    case mqtt_HAClass_freq:          HAClass = F("\"dev_cla\":\"frequency\",\"unit_of_meas\": \"Hz\",\"ic\": \"mdi:sine-wave\","); break; //energy: Wh, kWh, MWh	Energy, statistics will be stored in kWh. Represents power over time. Nmqttident to be confused with power.  power: W, kW	Power, statistics will be stored in W.
+//     case mqtt_HAClass_high:          HAClass = F("\"unit_of_meas\": \"m\",\"ic\": \"mdi:speedometer-medium\","); break;
+//     case mqtt_HAClass_co:            HAClass = F("\"dev_cla\":\"carbon_monoxide\",\"unit_of_meas\": \"ppm\",\"ic\": \"mdi:molecule-co\","); break;
+//     case mqtt_HAClass_switch:        HAClass = F("\"pl_off\":\"OFF\",\"pl_on\":\"ON\",");
+//                                      if (cmd_temp.length()>0) {HAClass +=F("\"cmd_t\":\"") + cmd_temp + F("_") + SensorName + F("\",");} break;
+//     default:                         HAClass = "\0"; break;
+//   }
+//   mqttclient.publish((HADiscoveryTopic + F("_") + me_lokalizacja + "_" + SensorName + F("/config")).c_str(), (F("{\"name\":\"") + me_lokalizacja + "_" + friendlySensorName + F("\",\"uniq_id\": \"") + me_lokalizacja + "_" + SensorName + F("\",\"stat_t\":\"") + ValueTopicName + F("\",\"val_tpl\":\"{{value_json.") + me_lokalizacja + "_" + SensorName +F("}}\",") + HAClass + F("\"qos\":") + QOS + F(",") + deviceid + F("}")).c_str(), mqtt_Retain);
+//   #endif
+// }
 
-  tmpbuilder = F("{");
-  tmpbuilder += F("\"CRT\":")+ String(runNumber);
-  tmpbuilder += F(",\"") + mqttident + BOILERROOM_PUMP1WA + F("\": ") + payloadvalue_startend_val + String(prgstatusrelay1WO?"\"ON\"":"\"OFF\"") + payloadvalue_startend_val;
-  tmpbuilder += F(",\"") + mqttident + BOILERROOM_PUMP2CO + F("\": ") + payloadvalue_startend_val + String(prgstatusrelay2CO?"\"ON\"":"\"OFF\"") + payloadvalue_startend_val;   //getpumpstatus(2)
-  mqttclient.publish(BOILERROOM_SWITCH_TOPIC.c_str(),(tmpbuilder+F("}")).c_str(), mqtt_Retain);
 
-  publishhomeassistantconfig++; // zwiekszamy licznik wykonan wyslania mqtt by co publishhomeassistantconfigdivider wysłań wysłać autoconfig discovery dla homeassisatnt
-  if (publishhomeassistantconfig % publishhomeassistantconfigdivider == 0)
-  {
-    //Make Homeassistant autodiscovery and autoconfig
-    //Temperatures
-    if (NTherm!=InitTemp) mqttHAPublish_Config(BOILERROOM_HA_SENSOR_TOPIC, BOILERROOM_SENSOR_TOPIC, OUTSIDE_TEMPERATURE_N, dNThermometerS, mqtt_HAClass_temperature);
-    if (ETherm!=InitTemp) mqttHAPublish_Config(BOILERROOM_HA_SENSOR_TOPIC, BOILERROOM_SENSOR_TOPIC, OUTSIDE_TEMPERATURE_E, dEThermometerS, mqtt_HAClass_temperature);
-    if (WTherm!=InitTemp) mqttHAPublish_Config(BOILERROOM_HA_SENSOR_TOPIC, BOILERROOM_SENSOR_TOPIC, OUTSIDE_TEMPERATURE_W, dWThermometerS, mqtt_HAClass_temperature);
-    if (STherm!=InitTemp) mqttHAPublish_Config(BOILERROOM_HA_SENSOR_TOPIC, BOILERROOM_SENSOR_TOPIC, OUTSIDE_TEMPERATURE_S, dSThermometerS, mqtt_HAClass_temperature);
-    if (OutsideTempAvg!=InitTemp) mqttHAPublish_Config(BOILERROOM_HA_SENSOR_TOPIC, BOILERROOM_SENSOR_TOPIC, OUTSIDE_TEMPERATURE_A, dallThermometerS, mqtt_HAClass_temperature);
-    if (coTherm!=InitTemp) mqttHAPublish_Config(BOILERROOM_HA_SENSOR_TOPIC, BOILERROOM_SENSOR_TOPIC, HEATERCO_TEMPERATURE, dcoThermstat, mqtt_HAClass_temperature);
-    if (waterTherm!=InitTemp) mqttHAPublish_Config(BOILERROOM_HA_SENSOR_TOPIC, BOILERROOM_SENSOR_TOPIC, WATER_TEMPERATURE, dwaterThermstat, mqtt_HAClass_temperature);
-    if (bmTemp!=InitTemp) mqttHAPublish_Config(BOILERROOM_HA_SENSOR_TOPIC, BOILERROOM_SENSOR_TOPIC, BOILERROOM_TEMPERATURE, dbmtemperature, mqtt_HAClass_temperature);
-    //pressure
-    mqttHAPublish_Config(BOILERROOM_HA_SENSOR_TOPIC, BOILERROOM_SENSOR_TOPIC, BOILERROOM_PRESSURE, dbmpressure, mqtt_HAClass_pressure);
-    //high
-    mqttHAPublish_Config(BOILERROOM_HA_SENSOR_TOPIC, BOILERROOM_SENSOR_TOPIC, BOILERROOM_HIGH, dbmhigh, mqtt_HAClass_high);
-    mqttHAPublish_Config(BOILERROOM_HA_SENSOR_TOPIC, BOILERROOM_SENSOR_TOPIC, BOILERROOM_HIGHREAL, dbmhighr, mqtt_HAClass_high);
-    //CO ppm
-    mqttHAPublish_Config(BOILERROOM_HA_SENSOR_TOPIC, BOILERROOM_SENSOR_TOPIC, BOILERROOM_COVAL, dcoS, mqtt_HAClass_co);
-    //pumps energy
-    // mqttHAPublish_Config(BOILERROOM_HA_SENSOR_TOPIC, BOILERROOM_SENSOR_TOPIC, BOILERROOM_PUMP1WA_E, dpump1energyS, mqtt_HAClass_energy);
-    // mqttHAPublish_Config(BOILERROOM_HA_SENSOR_TOPIC, BOILERROOM_SENSOR_TOPIC, BOILERROOM_PUMP2CO_E, dpump2energyS, mqtt_HAClass_energy);
+//   #ifdef enableMQTT
+// void updateMQTTData() {
+//   #include "configmqtttopics.h"
+//   String mqttdeviceid = String(BASE_TOPIC);
+//   const String payloadvalue_startend_val = F(" "); // value added before and after value send to mqtt queue
+//   String tmpbuilder = F("{");
+//   tmpbuilder += F("\"rssi\":")+ String(WiFi.RSSI());
+//   tmpbuilder += F(",\"CRT\":")+ String(CRTrunNumber);
+//   tmpbuilder += F(",\"uptime\":")+ String((millis())/1000);   //w sekundach
+//   if (NTherm != InitTemp) {tmpbuilder += F(",\"") + me_lokalizacja + "_" + OUTSIDE_TEMPERATURE_N + F("\": ") + payloadvalue_startend_val + String(NTherm) + payloadvalue_startend_val;}
+//   if (ETherm != InitTemp) {tmpbuilder += F(",\"") + me_lokalizacja + "_" + OUTSIDE_TEMPERATURE_E + F("\": ") + payloadvalue_startend_val + String(ETherm) + payloadvalue_startend_val;}
+//   if (WTherm != InitTemp) {tmpbuilder += F(",\"") + me_lokalizacja + "_" + OUTSIDE_TEMPERATURE_W + F("\": ") + payloadvalue_startend_val + String(WTherm) + payloadvalue_startend_val;}
+//   if (STherm != InitTemp) {tmpbuilder += F(",\"") + me_lokalizacja + "_" + OUTSIDE_TEMPERATURE_S + F("\": ") + payloadvalue_startend_val + String(STherm) + payloadvalue_startend_val;}
+//   if (OutsideTempAvg != InitTemp) {tmpbuilder += F(",\"") + me_lokalizacja + "_" + OUTSIDE_TEMPERATURE_A + F("\": ") + payloadvalue_startend_val + String(OutsideTempAvg) + payloadvalue_startend_val;}
+//   if (coTherm != InitTemp) {tmpbuilder += F(",\"") + me_lokalizacja + "_" + HEATERCO_TEMPERATURE + F("\": ") + payloadvalue_startend_val + String(coTherm) + payloadvalue_startend_val;}
+//   if (waterTherm != InitTemp) {tmpbuilder += F(",\"") + me_lokalizacja + "_" + WATER_TEMPERATURE + F("\": ") + payloadvalue_startend_val + String(waterTherm) + payloadvalue_startend_val;}
+//   if (bmTemp != InitTemp) {tmpbuilder += F(",\"") + me_lokalizacja + "_" + BOILERROOM_TEMPERATURE + F("\": ") + payloadvalue_startend_val + String(bmTemp) + payloadvalue_startend_val;}
+//   tmpbuilder += F(",\"") + me_lokalizacja + "_" + BOILERROOM_PRESSURE + F("\": ") + payloadvalue_startend_val + String(dbmpressval) + payloadvalue_startend_val;
+//   tmpbuilder += F(",\"") + me_lokalizacja + "_" + BOILERROOM_HIGH + F("\": ") + payloadvalue_startend_val + String(bm_high) + payloadvalue_startend_val;
+//   tmpbuilder += F(",\"") + me_lokalizacja + "_" + BOILERROOM_HIGHREAL + F("\": ") + payloadvalue_startend_val + String(bm_high_real) + payloadvalue_startend_val;
+//   tmpbuilder += F(",\"") + me_lokalizacja + "_" + BOILERROOM_COVAL + F("\": ") + payloadvalue_startend_val + String(dcoval) + payloadvalue_startend_val;
+//   tmpbuilder += F(",\"") + me_lokalizacja + "_" + BOILERROOM_PUMP1WA_E + F("\": ") + payloadvalue_startend_val + String(energy1used) + payloadvalue_startend_val;
+//   tmpbuilder += F(",\"") + me_lokalizacja + "_" + BOILERROOM_PUMP2CO_E + F("\": ") + payloadvalue_startend_val + String(energy2used) + payloadvalue_startend_val;
+//   //pump status
+//   mqttclient.publish(BOILERROOM_SENSOR_TOPIC.c_str(),(tmpbuilder+F("}")).c_str(), mqtt_Retain);
 
-    mqttHAPublish_Config(BOILERROOM_HA_SENSOR_TOPIC, BOILERROOM_SENSOR_TOPIC, BOILERROOM_PUMP1WA_E, dpump1energyS, mqtt_HAClass_energy);
-    mqttHAPublish_Config(BOILERROOM_HA_SENSOR_TOPIC, BOILERROOM_SENSOR_TOPIC, BOILERROOM_PUMP2CO_E, dpump2energyS, mqtt_HAClass_energy);
-    //pumps switch/state
-    mqttHAPublish_Config(BOILERROOM_HA_SWITCH_TOPIC, BOILERROOM_SWITCH_TOPIC, BOILERROOM_PUMP1WA, dpump1, mqtt_HAClass_switch, BOILERROOM_SWITCH_TOPIC_SET);
-    mqttHAPublish_Config(BOILERROOM_HA_SWITCH_TOPIC, BOILERROOM_SWITCH_TOPIC, BOILERROOM_PUMP2CO, dpump2, mqtt_HAClass_switch, BOILERROOM_SWITCH_TOPIC_SET);
-  }
+//   tmpbuilder = F("{");
+//   tmpbuilder += F("\"CRT\":")+ String(CRTrunNumber);
+//   tmpbuilder += F(",\"") + me_lokalizacja + "_" + BOILERROOM_PUMP1WA + F("\": ") + payloadvalue_startend_val + String(prgstatusrelay1WO?"\"ON\"":"\"OFF\"") + payloadvalue_startend_val;
+//   tmpbuilder += F(",\"") + me_lokalizacja + "_" + BOILERROOM_PUMP2CO + F("\": ") + payloadvalue_startend_val + String(prgstatusrelay2CO?"\"ON\"":"\"OFF\"") + payloadvalue_startend_val;   //getpumpstatus(2)
+//   mqttclient.publish(BOILERROOM_SWITCH_TOPIC.c_str(),(tmpbuilder+F("}")).c_str(), mqtt_Retain);
 
-  // }
-  log_message((char*)F("MQTT Data Sended..."));
-  #endif
-}
+//   publishhomeassistantconfig++; // zwiekszamy licznik wykonan wyslania mqtt by co publishhomeassistantconfigdivider wysłań wysłać autoconfig discovery dla homeassisatnt
+//   if (publishhomeassistantconfig % publishhomeassistantconfigdivider == 0)
+//   {
+//     //Make Homeassistant autodiscovery and autoconfig
+//     //Temperatures
+//     if (!check_isValidTemp(NTherm)) HADiscovery(BOILERROOM_SENSOR_TOPIC, "\0", OUTSIDE_TEMPERATURE_N, BOILERROOM_HA_SENSOR_TOPIC, "temperature");   //mqttHAPublish_Config(BOILERROOM_HA_SENSOR_TOPIC, BOILERROOM_SENSOR_TOPIC, OUTSIDE_TEMPERATURE_N, dNThermometerS, mqtt_HAClass_temperature);
+//     if (!check_isValidTemp(ETherm)) HADiscovery(BOILERROOM_SENSOR_TOPIC, "\0", OUTSIDE_TEMPERATURE_E, BOILERROOM_HA_SENSOR_TOPIC, "temperature");   //mqttHAPublish_Config(BOILERROOM_HA_SENSOR_TOPIC, BOILERROOM_SENSOR_TOPIC, OUTSIDE_TEMPERATURE_E, dEThermometerS, mqtt_HAClass_temperature);
+//     if (!check_isValidTemp(WTherm)) HADiscovery(BOILERROOM_SENSOR_TOPIC, "\0", OUTSIDE_TEMPERATURE_W, BOILERROOM_HA_SENSOR_TOPIC, "temperature");   //mqttHAPublish_Config(BOILERROOM_HA_SENSOR_TOPIC, BOILERROOM_SENSOR_TOPIC, OUTSIDE_TEMPERATURE_W, dWThermometerS, mqtt_HAClass_temperature);
+//     if (!check_isValidTemp(STherm)) HADiscovery(BOILERROOM_SENSOR_TOPIC, "\0", OUTSIDE_TEMPERATURE_S, BOILERROOM_HA_SENSOR_TOPIC, "temperature");   //mqttHAPublish_Config(BOILERROOM_HA_SENSOR_TOPIC, BOILERROOM_SENSOR_TOPIC, OUTSIDE_TEMPERATURE_S, dSThermometerS, mqtt_HAClass_temperature);
+//     if (!check_isValidTemp(OutsideTempAvg)) HADiscovery(BOILERROOM_SENSOR_TOPIC, "\0", OUTSIDE_TEMPERATURE_A, BOILERROOM_HA_SENSOR_TOPIC, "temperature");   //mqttHAPublish_Config(BOILERROOM_HA_SENSOR_TOPIC, BOILERROOM_SENSOR_TOPIC, OUTSIDE_TEMPERATURE_A, dallThermometerS, mqtt_HAClass_temperature);
+//     if (!check_isValidTemp(coTherm)) HADiscovery(BOILERROOM_SENSOR_TOPIC, "\0", HEATERCO_TEMPERATURE, BOILERROOM_HA_SENSOR_TOPIC, "temperature");   //mqttHAPublish_Config(BOILERROOM_HA_SENSOR_TOPIC, BOILERROOM_SENSOR_TOPIC, HEATERCO_TEMPERATURE, dcoThermstat, mqtt_HAClass_temperature);
+//     if (!check_isValidTemp(waterTherm)) HADiscovery(BOILERROOM_SENSOR_TOPIC, "\0", WATER_TEMPERATURE, BOILERROOM_HA_SENSOR_TOPIC, "temperature");   //mqttHAPublish_Config(BOILERROOM_HA_SENSOR_TOPIC, BOILERROOM_SENSOR_TOPIC, WATER_TEMPERATURE, dwaterThermstat, mqtt_HAClass_temperature);
+//     if (!check_isValidTemp(bmTemp)) HADiscovery(BOILERROOM_SENSOR_TOPIC, "\0", BOILERROOM_TEMPERATURE, BOILERROOM_HA_SENSOR_TOPIC, "temperature");   //mqttHAPublish_Config(BOILERROOM_HA_SENSOR_TOPIC, BOILERROOM_SENSOR_TOPIC, BOILERROOM_TEMPERATURE, dbmtemperature, mqtt_HAClass_temperature);
+//     //pressure
+//     HADiscovery(BOILERROOM_SENSOR_TOPIC, "\0", BOILERROOM_PRESSURE, BOILERROOM_HA_SENSOR_TOPIC, "pressure");   //mqttHAPublish_Config(BOILERROOM_HA_SENSOR_TOPIC, BOILERROOM_SENSOR_TOPIC, BOILERROOM_PRESSURE, dbmpressure, mqtt_HAClass_pressure);
+//     //high
+//     HADiscovery(BOILERROOM_SENSOR_TOPIC, "\0", BOILERROOM_HIGH, BOILERROOM_HA_SENSOR_TOPIC, "high");   //mqttHAPublish_Config(BOILERROOM_HA_SENSOR_TOPIC, BOILERROOM_SENSOR_TOPIC, BOILERROOM_HIGH, dbmhigh, mqtt_HAClass_high);
+//     HADiscovery(BOILERROOM_SENSOR_TOPIC, "\0", BOILERROOM_HIGHREAL, BOILERROOM_HA_SENSOR_TOPIC, "high");   //mqttHAPublish_Config(BOILERROOM_HA_SENSOR_TOPIC, BOILERROOM_SENSOR_TOPIC, BOILERROOM_HIGHREAL, dbmhighr, mqtt_HAClass_high);
+//     //CO ppm
+//     HADiscovery(BOILERROOM_SENSOR_TOPIC, "\0", BOILERROOM_COVAL, BOILERROOM_HA_SENSOR_TOPIC, "co");   //mqttHAPublish_Config(BOILERROOM_HA_SENSOR_TOPIC, BOILERROOM_SENSOR_TOPIC, BOILERROOM_COVAL, dcoS, mqtt_HAClass_co);
+//     //pumps energy
+//     // mqttHAPublish_Config(BOILERROOM_HA_SENSOR_TOPIC, BOILERROOM_SENSOR_TOPIC, BOILERROOM_PUMP1WA_E, dpump1energyS, mqtt_HAClass_energy);
+//     // mqttHAPublish_Config(BOILERROOM_HA_SENSOR_TOPIC, BOILERROOM_SENSOR_TOPIC, BOILERROOM_PUMP2CO_E, dpump2energyS, mqtt_HAClass_energy);
+
+//     HADiscovery(BOILERROOM_SENSOR_TOPIC, "\0", BOILERROOM_PUMP1WA_E, BOILERROOM_HA_SENSOR_TOPIC, "energy");   // mqttHAPublish_Config(BOILERROOM_HA_SENSOR_TOPIC, BOILERROOM_SENSOR_TOPIC, BOILERROOM_PUMP1WA_E, dpump1energyS, mqtt_HAClass_energy);
+//     HADiscovery(BOILERROOM_SENSOR_TOPIC, "\0", BOILERROOM_PUMP2CO_E, BOILERROOM_HA_SENSOR_TOPIC, "energy");   //mqttHAPublish_Config(BOILERROOM_HA_SENSOR_TOPIC, BOILERROOM_SENSOR_TOPIC, BOILERROOM_PUMP2CO_E, dpump2energyS, mqtt_HAClass_energy);
+//     //pumps switch/state
+//     HADiscovery(BOILERROOM_SWITCH_TOPIC, "\0", BOILERROOM_PUMP1WA, BOILERROOM_HA_SWITCH_TOPIC, "switch");   //mqttHAPublish_Config(BOILERROOM_HA_SWITCH_TOPIC, BOILERROOM_SWITCH_TOPIC, BOILERROOM_PUMP1WA, dpump1, mqtt_HAClass_switch, BOILERROOM_SWITCH_TOPIC_SET);
+//     HADiscovery(BOILERROOM_SWITCH_TOPIC, "\0", BOILERROOM_PUMP2CO, BOILERROOM_HA_SWITCH_TOPIC, "switch");   //mqttHAPublish_Config(BOILERROOM_HA_SWITCH_TOPIC, BOILERROOM_SWITCH_TOPIC, BOILERROOM_PUMP2CO, dpump2, mqtt_HAClass_switch, BOILERROOM_SWITCH_TOPIC_SET);
+//   }
+
+//   // }
+//   log_message((char*)F("MQTT Data Sended..."));
+// }
+//   #endif

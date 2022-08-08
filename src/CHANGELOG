@@ -23,3 +23,4 @@ Arduino MiniPro->ESP8266 v.2.7.1 arduino 1.8.12 i zmodyfikowany Filesystem do 3M
 //v3.02d -korekty w forceCO i wyswietlaniu sredniej temp zewnatrz oraz wyliczaniu CO. Dopiseny sygnal dBm do www
 //v3.02e -poprawa display i dodany dwukropek do temps
 //v 202205 disable arduino json, ardiuno homeassistant and introduce own implementation
+//v202208 Change web interface replace WebSerial to Websocket log add arduinoOTA
