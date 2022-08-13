@@ -7,32 +7,32 @@
 #define ASS_MemStatsStr "MemStats"
 #define ASS_temp_NEWS  3      // avg temperatura outside -getting this from mqtt topic as averange from 4 sensors North West East South
 #define ASS_temp_NEWSStr "temp_NEWS"
-#define ASS_bmTemp 4           //hot water temp
-#define ASS_bmTempStr "bmTemp"
-#define ASS_coTherm 5         //hot water temp set
-#define ASS_coThermStr "coTherm"
-#define ASS_forceCObelow 6        // outside temp setpoint to cutoff heating co. CO heating is disabled if outside temp (temp_NEWS) is above this value
-#define ASS_forceCObelowStr "sliderValue3"
-#define ASS_waterTherm 7
-#define ASS_waterThermStr "waterTherm"
-#define ASS_NTherm 8
-#define ASS_NThermStr "NTherm"
-#define ASS_ETherm 9
-#define ASS_EThermStr "ETherm"
-#define ASS_WTherm 10        //boiler heat for co heat/not
-#define ASS_WThermStr "WTherm"
-#define ASS_STherm 11      //hotWater heat active/not
-#define ASS_SThermStr "STherm"
-#define ASS_coConstTempCutOff 12
-#define ASS_coConstTempCutOffStr "sliderValue4"
-#define ASS_dcoval 13
-#define ASS_dcovalStr "dcoval"
-#define ASS_forceCO 14
-#define ASS_forceCOStr "forceCO"
-#define ASS_forceWater 15
-#define ASS_forceWaterStr "forceWater"
-#define ASS_lastNEWSSet 16      //last time NEWS get updated from mqtt
+#define ASS_lastNEWSSet 4      //last time NEWS get updated from mqtt
 #define ASS_lastNEWSSetStr "lastNEWSSet"
+#define ASS_bmTemp 5           //hot water temp
+#define ASS_bmTempStr "bmTemp"
+#define ASS_coTherm 6         //hot water temp set
+#define ASS_coThermStr "coTherm"
+#define ASS_forceCObelow 7        // outside temp setpoint to cutoff heating co. CO heating is disabled if outside temp (temp_NEWS) is above this value
+#define ASS_forceCObelowStr "sliderValue3"
+#define ASS_waterTherm 8
+#define ASS_waterThermStr "waterTherm"
+#define ASS_NTherm 9
+#define ASS_NThermStr "NTherm"
+#define ASS_ETherm 10
+#define ASS_EThermStr "ETherm"
+#define ASS_WTherm 11        //boiler heat for co heat/not
+#define ASS_WThermStr "WTherm"
+#define ASS_STherm 12      //hotWater heat active/not
+#define ASS_SThermStr "STherm"
+#define ASS_coConstTempCutOff 13
+#define ASS_coConstTempCutOffStr "sliderValue4"
+#define ASS_dcoval 14
+#define ASS_dcovalStr "dcoval"
+#define ASS_forceCO 15
+#define ASS_forceCOStr "forceCO"
+#define ASS_forceWater 16
+#define ASS_forceWaterStr "forceWater"
 #define ASS_prgstatusrelay1WO  17        //Return temperature
 #define ASS_prgstatusrelay1WOStr "prgstatusrelay1WOStr"
 #define ASS_prgstatusrelay2CO 18
@@ -47,9 +47,15 @@
 #define ASS_opcohiStr "opcohi"
 #define ASS_bm_high_real 23
 #define ASS_bm_high_realStr "bm_high_real"
+#define ASS_pump1wo 24
+#define ASS_pump1woStr "pump1wo"
+#define ASS_pump2co 25
+#define ASS_pump2coStr "pump2co"
+#define ASS_waterThermBG 26         //hot water temp set
+#define ASS_waterThermBGStr "waterTherm_boilerGAZ"
 
 
-#define ASS_Num (23 + 1)              //number of ASS definitions
+#define ASS_Num (26 + 1)              //number of ASS definitions
 #define numDecimalsWWW 1
 #define cutoff_histereza 0.7        //histereza cutoff and roomtemp/roomtempset
 #define dhwTargetStart 51           // domyslna temperatura docelowa wody uzytkowej

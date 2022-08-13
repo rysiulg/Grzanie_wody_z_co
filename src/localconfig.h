@@ -93,6 +93,7 @@ double pump1energyLast = 0,
        commonFreq = 50.00,
        bmTemp = 0,
        coTherm = InitTempst,
+       waterThermBG = InitTempst, //remote temp from boilergaz
        waterTherm = InitTempst,
        NTherm = InitTempst,
        ETherm = InitTempst,

@@ -4,27 +4,39 @@ void mqttReconnect_subscribe_list()
 {
 #if defined enableMQTT || defined enableMQTTAsync
     log_message((char*)F("MQTT Reconnect Subscribe List..."));
-    #ifdef enableMQTT
-      mqttclient.subscribe(SUPLA_VOLT_TOPIC.c_str());
-      mqttclient.subscribe(SUPLA_FREQ_TOPIC.c_str());
-      mqttclient.subscribe((BOILERROOM_SWITCH_TOPIC_SET+"_"+BOILERROOM_PUMP1WA).c_str());
-      mqttclient.subscribe((BOILERROOM_SWITCH_TOPIC_SET+"_"+BOILERROOM_PUMP2CO).c_str());
-    #endif
-    #ifdef enableMQTTAsync
-      uint16_t packetIdSub;
-      packetIdSub = mqttclient.subscribe(SUPLA_VOLT_TOPIC.c_str(), QOS);
-      packetIdSub = mqttclient.subscribe(SUPLA_FREQ_TOPIC.c_str(), QOS);
-      packetIdSub = mqttclient.subscribe((BOILERROOM_SWITCH_TOPIC_SET+"_"+BOILERROOM_PUMP1WA).c_str(), QOS);
-      packetIdSub = mqttclient.subscribe((BOILERROOM_SWITCH_TOPIC_SET+"_"+BOILERROOM_PUMP2CO).c_str(), QOS);
-      if (packetIdSub == 0) packetIdSub = 0;
-    #endif
+    SubscribeMQTT(SUPLA_VOLT_TOPIC, QOS);
+    SubscribeMQTT(SUPLA_FREQ_TOPIC, QOS);
+    SubscribeMQTT(BOILER_GAZ_CWU_TOPIC, QOS);
+    String tmp = "\0";
+    tmp = BOILERROOM_SWITCH_TOPIC_SET;
+    tmp += F("_");
+    tmp += BOILERROOM_PUMP1WA;
+    SubscribeMQTT(tmp, QOS);
+    tmp = BOILERROOM_SWITCH_TOPIC_SET;
+    tmp += F("_");
+    tmp += BOILERROOM_PUMP2CO;
+    SubscribeMQTT(tmp, QOS);
 #endif
 }
 
 #if defined enableMQTT || defined enableMQTTAsync
-void mqttCallbackAsString(String topicStrFromMQTT, String payloadStrFromMQTT)
-{
+void mqttCallbackAsString(String &topicStrFromMQTT, String &payloadStrFromMQTT) {
 //get Voltage on same phase
+  if (topicStrFromMQTT.indexOf(String(BOILER_GAZ_CWU_TOPIC))==0 and payloadStrFromMQTT.indexOf(String(BOILER_GAZ_CWU_JSON))>=0)              //NEWS averange temp -outside temp
+  {
+    String ident = "BOILER_GAZ_CWU_JSON temp ";
+    String tmpStrmqtt = getJsonVal(payloadStrFromMQTT, String(BOILER_GAZ_CWU_JSON));
+    if (PayloadtoValidFloatCheck(tmpStrmqtt))          //invalid val is displayed in funct
+    {
+      waterThermBG = PayloadtoValidFloat(tmpStrmqtt, true);   //true to get output to serial and webserial
+      sprintf(log_chars, "%s updated from MQTT to: %s", ident.c_str(), String(waterThermBG).c_str());
+      log_message(log_chars);
+      //      receivedmqttdata = true;    //makes every second run mqtt send and influx
+    } else {
+      //sprintf(log_chars, "%s not updated from MQTT: %s, %s", ident.c_str(), getJsonVal(payloadStrFromMQTT, String(NEWStemp_json)).c_str(), String(PayloadtoValidFloatCheck(getJsonVal(payloadStrFromMQTT, String(NEWStemp_json)))).c_str());
+      log_message(log_chars);
+    }
+  } else
   if (topicStrFromMQTT == SUPLA_VOLT_TOPIC)
   {
     String ident = String(millis())+F(": electricmain Volt ");
@@ -124,47 +136,57 @@ void updateMQTTData()
   String mqttdeviceid = String(BASE_TOPIC);
   const String payloadvalue_startend_val = F(" "); // value added before and after value send to mqtt queue
   String tmpbuilder = F("\0");
-  tmpbuilder += buildMQTT_SensorPayload(F("rssi"), String(WiFi.RSSI()), true ); //not add first separator ;)
-  tmpbuilder += buildMQTT_SensorPayload(F("CRT"), String(CRTrunNumber), false, payloadvalue_startend_val);
-  tmpbuilder += buildMQTT_SensorPayload(F("uptime"), String((millis())/1000), false, payloadvalue_startend_val);   //w sekundach
-  if (check_isValidTemp(NTherm)) { tmpbuilder += buildMQTT_SensorPayload(OUTSIDE_TEMPERATURE_N, String(NTherm), false, payloadvalue_startend_val); }
-  if (check_isValidTemp(ETherm)) { tmpbuilder += buildMQTT_SensorPayload(OUTSIDE_TEMPERATURE_E, String(ETherm), false, payloadvalue_startend_val); }
-  if (check_isValidTemp(WTherm)) { tmpbuilder += buildMQTT_SensorPayload(OUTSIDE_TEMPERATURE_W, String(WTherm), false, payloadvalue_startend_val); }
-  if (check_isValidTemp(STherm)) { tmpbuilder += buildMQTT_SensorPayload(OUTSIDE_TEMPERATURE_S, String(STherm), false, payloadvalue_startend_val); }
-  if (check_isValidTemp(OutsideTempAvg)) { tmpbuilder += buildMQTT_SensorPayload(OUTSIDE_TEMPERATURE_A, String(OutsideTempAvg), false, payloadvalue_startend_val); }
-  if (check_isValidTemp(coTherm)) { tmpbuilder += buildMQTT_SensorPayload(HEATERCO_TEMPERATURE, String(coTherm), false, payloadvalue_startend_val); }
-  if (check_isValidTemp(waterTherm)) { tmpbuilder += buildMQTT_SensorPayload(WATER_TEMPERATURE, String(waterTherm), false, payloadvalue_startend_val); }
-  if (check_isValidTemp(bmTemp)) { tmpbuilder += buildMQTT_SensorPayload(BOILERROOM_TEMPERATURE, String(bmTemp), false, payloadvalue_startend_val); }
-  tmpbuilder += buildMQTT_SensorPayload(BOILERROOM_PRESSURE, String(dbmpressval), false, payloadvalue_startend_val);
-  tmpbuilder += buildMQTT_SensorPayload(BOILERROOM_HIGH, String(bm_high), false, payloadvalue_startend_val);
-  tmpbuilder += buildMQTT_SensorPayload(BOILERROOM_HIGHREAL, String(bm_high_real), false, payloadvalue_startend_val);
-  tmpbuilder += buildMQTT_SensorPayload(BOILERROOM_COVAL, String(dcoval), false, payloadvalue_startend_val);
-  tmpbuilder += buildMQTT_SensorPayload(BOILERROOM_PUMP1WA_E, String(energy1used), false, payloadvalue_startend_val);
-  tmpbuilder += buildMQTT_SensorPayload(BOILERROOM_PUMP2CO_E, String(energy2used), false, payloadvalue_startend_val);
+  // char mqttTopic[maxLenMQTTTopic] = {'\0'};
+  // char mqttPayload[maxLenMQTTTopic] = {'\0'};
+  // sprintf(mqttTopic, BR_OUTSIDE_SENSOR_TOPIC.c_str());
+  String mqttTopic = String(BR_OUTSIDE_SENSOR_TOPIC);
+  if (check_isValidTemp(NTherm)) { tmpbuilder += build_JSON_Payload(OUTSIDE_TEMPERATURE_N, String(NTherm), true, payloadvalue_startend_val); }
+  if (check_isValidTemp(ETherm)) { tmpbuilder += build_JSON_Payload(OUTSIDE_TEMPERATURE_E, String(ETherm), false, payloadvalue_startend_val); }
+  if (check_isValidTemp(WTherm)) { tmpbuilder += build_JSON_Payload(OUTSIDE_TEMPERATURE_W, String(WTherm), false, payloadvalue_startend_val); }
+  if (check_isValidTemp(STherm)) { tmpbuilder += build_JSON_Payload(OUTSIDE_TEMPERATURE_S, String(STherm), false, payloadvalue_startend_val); }
+  if (check_isValidTemp(OutsideTempAvg)) { tmpbuilder += build_JSON_Payload(OUTSIDE_TEMPERATURE_A, String(OutsideTempAvg), false, payloadvalue_startend_val); }
+  //sprintf(mqttPayload, tmpbuilder.c_str());
+  publishMQTT(mqttTopic, tmpbuilder, mqtt_Retain, QOS);
 
-  char mqttTopic[64] = {'\0'};
-  char mqttPayload[512] = {'\0'};
-  sprintf(mqttTopic, BOILERROOM_SENSOR_TOPIC.c_str());
-  sprintf(mqttPayload, tmpbuilder.c_str());
-  publishMQTT(mqttTopic, mqttPayload, mqtt_Retain, QOS);
-
+  // sprintf(mqttTopic, BOILERROOM_SENSOR_TOPIC.c_str());
+  mqttTopic = String(BOILERROOM_SENSOR_TOPIC);
   tmpbuilder = F("\0");
-  tmpbuilder += buildMQTT_SensorPayload(BOILERROOM_PUMP1WA, String(prgstatusrelay1WO?"\"ON\"":"\"OFF\""), true, payloadvalue_startend_val);
-  tmpbuilder += buildMQTT_SensorPayload(BOILERROOM_PUMP2CO, String(prgstatusrelay1WO?"\"ON\"":"\"OFF\""), false, payloadvalue_startend_val);
-  sprintf(mqttTopic, BOILERROOM_SWITCH_TOPIC.c_str());
-  sprintf(mqttPayload, tmpbuilder.c_str());
-  publishMQTT(mqttTopic, mqttPayload, mqtt_Retain, QOS);
+  tmpbuilder += build_JSON_Payload(BOILERROOM_PRESSURE, String(dbmpressval), true, payloadvalue_startend_val);
+  if (check_isValidTemp(coTherm)) { tmpbuilder += build_JSON_Payload(HEATERCO_TEMPERATURE, String(coTherm), false, payloadvalue_startend_val); }
+  if (check_isValidTemp(waterTherm)) { tmpbuilder += build_JSON_Payload(WATER_TEMPERATURE, String(waterTherm), false, payloadvalue_startend_val); }
+  if (check_isValidTemp(bmTemp)) { tmpbuilder += build_JSON_Payload(BOILERROOM_TEMPERATURE, String(bmTemp), false, payloadvalue_startend_val); }
+  tmpbuilder += build_JSON_Payload(BOILERROOM_HIGH, String(bm_high), false, payloadvalue_startend_val);
+  tmpbuilder += build_JSON_Payload(BOILERROOM_HIGHREAL, String(bm_high_real), false, payloadvalue_startend_val);
+  tmpbuilder += build_JSON_Payload(BOILERROOM_COVAL, String(dcoval), false, payloadvalue_startend_val);
+  // sprintf(mqttPayload, tmpbuilder.c_str());
+  publishMQTT(mqttTopic, tmpbuilder, mqtt_Retain, QOS);
+
+  // sprintf(mqttTopic, BR_MEDIA_SENSOR_TOPIC.c_str());
+  mqttTopic = String(BR_MEDIA_SENSOR_TOPIC);
+  tmpbuilder = F("\0");
+  tmpbuilder += build_JSON_Payload(BOILERROOM_PUMP1WA_E, String(energy1used), true, payloadvalue_startend_val);
+  tmpbuilder += build_JSON_Payload(BOILERROOM_PUMP2CO_E, String(energy2used), false, payloadvalue_startend_val);
+  // sprintf(mqttPayload, tmpbuilder.c_str());
+  publishMQTT(mqttTopic, tmpbuilder, mqtt_Retain, QOS);
+
+  // sprintf(mqttTopic, BOILERROOM_SWITCH_TOPIC.c_str());
+  mqttTopic = String(BOILERROOM_SWITCH_TOPIC);
+  tmpbuilder = F("\0");
+  tmpbuilder += build_JSON_Payload(BOILERROOM_PUMP1WA, String(prgstatusrelay1WO?"\"ON\"":"\"OFF\""), true, payloadvalue_startend_val);
+  tmpbuilder += build_JSON_Payload(BOILERROOM_PUMP2CO, String(prgstatusrelay1WO?"\"ON\"":"\"OFF\""), false, payloadvalue_startend_val);
+  // sprintf(mqttPayload, tmpbuilder.c_str());
+  publishMQTT(mqttTopic, tmpbuilder, mqtt_Retain, QOS);
 
   publishhomeassistantconfig++; // zwiekszamy licznik wykonan wyslania mqtt by co publishhomeassistantconfigdivider wysłań wysłać autoconfig discovery dla homeassisatnt
   if (publishhomeassistantconfig % publishhomeassistantconfigdivider == 0)
   {
     //Make Homeassistant autodiscovery and autoconfig
     //Temperatures
-    if (!check_isValidTemp(NTherm)) HADiscovery(BOILERROOM_SENSOR_TOPIC, "\0", OUTSIDE_TEMPERATURE_N, BOILERROOM_HA_SENSOR_TOPIC, "temperature");   //mqttHAPublish_Config(BOILERROOM_HA_SENSOR_TOPIC, BOILERROOM_SENSOR_TOPIC, OUTSIDE_TEMPERATURE_N, dNThermometerS, mqtt_HAClass_temperature);
-    if (!check_isValidTemp(ETherm)) HADiscovery(BOILERROOM_SENSOR_TOPIC, "\0", OUTSIDE_TEMPERATURE_E, BOILERROOM_HA_SENSOR_TOPIC, "temperature");   //mqttHAPublish_Config(BOILERROOM_HA_SENSOR_TOPIC, BOILERROOM_SENSOR_TOPIC, OUTSIDE_TEMPERATURE_E, dEThermometerS, mqtt_HAClass_temperature);
-    if (!check_isValidTemp(WTherm)) HADiscovery(BOILERROOM_SENSOR_TOPIC, "\0", OUTSIDE_TEMPERATURE_W, BOILERROOM_HA_SENSOR_TOPIC, "temperature");   //mqttHAPublish_Config(BOILERROOM_HA_SENSOR_TOPIC, BOILERROOM_SENSOR_TOPIC, OUTSIDE_TEMPERATURE_W, dWThermometerS, mqtt_HAClass_temperature);
-    if (!check_isValidTemp(STherm)) HADiscovery(BOILERROOM_SENSOR_TOPIC, "\0", OUTSIDE_TEMPERATURE_S, BOILERROOM_HA_SENSOR_TOPIC, "temperature");   //mqttHAPublish_Config(BOILERROOM_HA_SENSOR_TOPIC, BOILERROOM_SENSOR_TOPIC, OUTSIDE_TEMPERATURE_S, dSThermometerS, mqtt_HAClass_temperature);
-    if (!check_isValidTemp(OutsideTempAvg)) HADiscovery(BOILERROOM_SENSOR_TOPIC, "\0", OUTSIDE_TEMPERATURE_A, BOILERROOM_HA_SENSOR_TOPIC, "temperature");   //mqttHAPublish_Config(BOILERROOM_HA_SENSOR_TOPIC, BOILERROOM_SENSOR_TOPIC, OUTSIDE_TEMPERATURE_A, dallThermometerS, mqtt_HAClass_temperature);
+    if (!check_isValidTemp(NTherm)) HADiscovery(BR_OUTSIDE_SENSOR_TOPIC, "\0", OUTSIDE_TEMPERATURE_N, BOILERROOM_HA_SENSOR_TOPIC, "temperature");   //mqttHAPublish_Config(BOILERROOM_HA_SENSOR_TOPIC, BOILERROOM_SENSOR_TOPIC, OUTSIDE_TEMPERATURE_N, dNThermometerS, mqtt_HAClass_temperature);
+    if (!check_isValidTemp(ETherm)) HADiscovery(BR_OUTSIDE_SENSOR_TOPIC, "\0", OUTSIDE_TEMPERATURE_E, BOILERROOM_HA_SENSOR_TOPIC, "temperature");   //mqttHAPublish_Config(BOILERROOM_HA_SENSOR_TOPIC, BOILERROOM_SENSOR_TOPIC, OUTSIDE_TEMPERATURE_E, dEThermometerS, mqtt_HAClass_temperature);
+    if (!check_isValidTemp(WTherm)) HADiscovery(BR_OUTSIDE_SENSOR_TOPIC, "\0", OUTSIDE_TEMPERATURE_W, BOILERROOM_HA_SENSOR_TOPIC, "temperature");   //mqttHAPublish_Config(BOILERROOM_HA_SENSOR_TOPIC, BOILERROOM_SENSOR_TOPIC, OUTSIDE_TEMPERATURE_W, dWThermometerS, mqtt_HAClass_temperature);
+    if (!check_isValidTemp(STherm)) HADiscovery(BR_OUTSIDE_SENSOR_TOPIC, "\0", OUTSIDE_TEMPERATURE_S, BOILERROOM_HA_SENSOR_TOPIC, "temperature");   //mqttHAPublish_Config(BOILERROOM_HA_SENSOR_TOPIC, BOILERROOM_SENSOR_TOPIC, OUTSIDE_TEMPERATURE_S, dSThermometerS, mqtt_HAClass_temperature);
+    if (!check_isValidTemp(OutsideTempAvg)) HADiscovery(BR_OUTSIDE_SENSOR_TOPIC, "\0", OUTSIDE_TEMPERATURE_A, BOILERROOM_HA_SENSOR_TOPIC, "temperature");   //mqttHAPublish_Config(BOILERROOM_HA_SENSOR_TOPIC, BOILERROOM_SENSOR_TOPIC, OUTSIDE_TEMPERATURE_A, dallThermometerS, mqtt_HAClass_temperature);
     if (!check_isValidTemp(coTherm)) HADiscovery(BOILERROOM_SENSOR_TOPIC, "\0", HEATERCO_TEMPERATURE, BOILERROOM_HA_SENSOR_TOPIC, "temperature");   //mqttHAPublish_Config(BOILERROOM_HA_SENSOR_TOPIC, BOILERROOM_SENSOR_TOPIC, HEATERCO_TEMPERATURE, dcoThermstat, mqtt_HAClass_temperature);
     if (!check_isValidTemp(waterTherm)) HADiscovery(BOILERROOM_SENSOR_TOPIC, "\0", WATER_TEMPERATURE, BOILERROOM_HA_SENSOR_TOPIC, "temperature");   //mqttHAPublish_Config(BOILERROOM_HA_SENSOR_TOPIC, BOILERROOM_SENSOR_TOPIC, WATER_TEMPERATURE, dwaterThermstat, mqtt_HAClass_temperature);
     if (!check_isValidTemp(bmTemp)) HADiscovery(BOILERROOM_SENSOR_TOPIC, "\0", BOILERROOM_TEMPERATURE, BOILERROOM_HA_SENSOR_TOPIC, "temperature");   //mqttHAPublish_Config(BOILERROOM_HA_SENSOR_TOPIC, BOILERROOM_SENSOR_TOPIC, BOILERROOM_TEMPERATURE, dbmtemperature, mqtt_HAClass_temperature);
@@ -179,8 +201,8 @@ void updateMQTTData()
     // mqttHAPublish_Config(BOILERROOM_HA_SENSOR_TOPIC, BOILERROOM_SENSOR_TOPIC, BOILERROOM_PUMP1WA_E, dpump1energyS, mqtt_HAClass_energy);
     // mqttHAPublish_Config(BOILERROOM_HA_SENSOR_TOPIC, BOILERROOM_SENSOR_TOPIC, BOILERROOM_PUMP2CO_E, dpump2energyS, mqtt_HAClass_energy);
 
-    HADiscovery(BOILERROOM_SENSOR_TOPIC, "\0", BOILERROOM_PUMP1WA_E, BOILERROOM_HA_SENSOR_TOPIC, "energy");   // mqttHAPublish_Config(BOILERROOM_HA_SENSOR_TOPIC, BOILERROOM_SENSOR_TOPIC, BOILERROOM_PUMP1WA_E, dpump1energyS, mqtt_HAClass_energy);
-    HADiscovery(BOILERROOM_SENSOR_TOPIC, "\0", BOILERROOM_PUMP2CO_E, BOILERROOM_HA_SENSOR_TOPIC, "energy");   //mqttHAPublish_Config(BOILERROOM_HA_SENSOR_TOPIC, BOILERROOM_SENSOR_TOPIC, BOILERROOM_PUMP2CO_E, dpump2energyS, mqtt_HAClass_energy);
+    HADiscovery(BR_MEDIA_SENSOR_TOPIC, "\0", BOILERROOM_PUMP1WA_E, BOILERROOM_HA_SENSOR_TOPIC, "energy");   // mqttHAPublish_Config(BOILERROOM_HA_SENSOR_TOPIC, BOILERROOM_SENSOR_TOPIC, BOILERROOM_PUMP1WA_E, dpump1energyS, mqtt_HAClass_energy);
+    HADiscovery(BR_MEDIA_SENSOR_TOPIC, "\0", BOILERROOM_PUMP2CO_E, BOILERROOM_HA_SENSOR_TOPIC, "energy");   //mqttHAPublish_Config(BOILERROOM_HA_SENSOR_TOPIC, BOILERROOM_SENSOR_TOPIC, BOILERROOM_PUMP2CO_E, dpump2energyS, mqtt_HAClass_energy);
     //pumps switch/state
     HADiscovery(BOILERROOM_SWITCH_TOPIC, "\0", BOILERROOM_PUMP1WA, BOILERROOM_HA_SWITCH_TOPIC, "switch");   //mqttHAPublish_Config(BOILERROOM_HA_SWITCH_TOPIC, BOILERROOM_SWITCH_TOPIC, BOILERROOM_PUMP1WA, dpump1, mqtt_HAClass_switch, BOILERROOM_SWITCH_TOPIC_SET);
     HADiscovery(BOILERROOM_SWITCH_TOPIC, "\0", BOILERROOM_PUMP2CO, BOILERROOM_HA_SWITCH_TOPIC, "switch");   //mqttHAPublish_Config(BOILERROOM_HA_SWITCH_TOPIC, BOILERROOM_SWITCH_TOPIC, BOILERROOM_PUMP2CO, dpump2, mqtt_HAClass_switch, BOILERROOM_SWITCH_TOPIC_SET);

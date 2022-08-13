@@ -13,8 +13,9 @@ const String STATS_TOPIC = BASE_TOPIC + "/stats";
 
 const String BASE_HA_TOPIC = "homeassistant";
 const String OUTSIDE = "outside";
-const String BOILERROOM = "boilerroom";
-const String TEMPERATURE = "_temperature";
+const String BOILERROOM = "boilroom";
+const String TEMPERATURE = "_temp";
+const String MEDIA = "media";
 
 
 
@@ -26,13 +27,13 @@ const String OUTSIDE_TEMPERATURE_N = OUTSIDE + TEMPERATURE + "_North";
 const String OUTSIDE_TEMPERATURE_E = OUTSIDE + TEMPERATURE + "_East";
 const String OUTSIDE_TEMPERATURE_W = OUTSIDE + TEMPERATURE + "_West";
 const String OUTSIDE_TEMPERATURE_S = OUTSIDE + TEMPERATURE + "_South";
-const String OUTSIDE_TEMPERATURE_A = OUTSIDE + TEMPERATURE + "_Averange";
+const String OUTSIDE_TEMPERATURE_A = OUTSIDE + TEMPERATURE + "_Avg";
 #ifdef newSensorT1
 const String BOILERROOM_TEMPERATURE_T1 = BOILERROOM + TEMPERATURE + "_Spare";
 #endif
 const String HEATERCO_TEMPERATURE = BOILERROOM + TEMPERATURE + "_CO";
 const String WATER_TEMPERATURE = BOILERROOM + TEMPERATURE + "_Water";
-const String BOILERROOM_TEMPERATURE = BOILERROOM + TEMPERATURE + "_RoomTemp";
+const String BOILERROOM_TEMPERATURE = BOILERROOM + TEMPERATURE + "_Room";
 const String BOILERROOM_PRESSURE = BOILERROOM + "_pressure";
 const String BOILERROOM_HIGH = BOILERROOM + "_high";
 const String BOILERROOM_HIGHREAL = BOILERROOM + "_highreal";
@@ -42,15 +43,19 @@ const String BOILERROOM_PUMP1WA_E = BOILERROOM + "_pump1Water_Energy";
 const String BOILERROOM_PUMP2CO = BOILERROOM + "_pump2CO";
 const String BOILERROOM_PUMP2CO_E = BOILERROOM + "_pump2CO_Energy";
 
-const String BOILERROOM_SWITCH_TOPIC = BASE_TOPIC + SWITCH + BOILERROOM + "/attributes";
+const String BOILERROOM_SWITCH_TOPIC = BASE_TOPIC + SWITCH + BOILERROOM + "/attrib";
 const String BOILERROOM_SWITCH_TOPIC_SET = BASE_TOPIC + SWITCH + BOILERROOM + "/set";
 const String BOILERROOM_HA_SWITCH_TOPIC = BASE_HA_TOPIC + SWITCH + BASE_TOPIC + "/";     //+"/state"
-const String BOILERROOM_SENSOR_TOPIC = BASE_TOPIC + SENSOR + BOILERROOM + "/attributes";
+const String BOILERROOM_SENSOR_TOPIC = BASE_TOPIC + SENSOR + BOILERROOM + "/attrib";
+const String BR_OUTSIDE_SENSOR_TOPIC = BASE_TOPIC + SENSOR + OUTSIDE + "/attrib";
+const String BR_MEDIA_SENSOR_TOPIC = BASE_TOPIC + SENSOR + MEDIA + "/attrib";
 const String BOILERROOM_HA_SENSOR_TOPIC = BASE_HA_TOPIC + SENSOR + BASE_TOPIC + "/";     //+"/state"
 //Subscribe
 String SUPLA_VOLT_TOPIC = "electricmain/supla/devices/zamel-mew-01-99a200/channels/0/state/phases/3/voltage";
 String SUPLA_FREQ_TOPIC = "electricmain/supla/devices/zamel-mew-01-99a200/channels/0/state/phases/3/frequency";
 
+String BOILER_GAZ_CWU_TOPIC = "BOILER_GAZ/CWU/attrib";
+String BOILER_GAZ_CWU_JSON = "ot_CWU_temp";
 
 // const String ROOM_TEMPERATURE = ROOM_TEMP + TEMPERATURE;
 // const String ROOM_TEMPERATURE_SETPOINT = ROOM_TEMPERATURE + "_setpoint";

@@ -149,11 +149,9 @@ String get_PlaceholderName(u_int i){    //replace specific placeholder -return S
 
     case ASS_temp_NEWS: return PSTR(ASS_temp_NEWSStr); break;
     case ASS_lastNEWSSet: return PSTR(ASS_lastNEWSSetStr); break;
-    case ASS_forceCObelow: return PSTR(ASS_forceCObelowStr); break;
-    case ASS_opcohi: return PSTR(ASS_opcohiStr); break;
-
     case ASS_bmTemp: return PSTR(ASS_bmTempStr); break;
     case ASS_coTherm: return PSTR(ASS_coThermStr); break;
+    case ASS_forceCObelow: return PSTR(ASS_forceCObelowStr); break;
     case ASS_waterTherm: return PSTR(ASS_waterThermStr); break;
     case ASS_NTherm: return PSTR(ASS_NThermStr); break;
     case ASS_ETherm: return PSTR(ASS_EThermStr); break;
@@ -168,7 +166,12 @@ String get_PlaceholderName(u_int i){    //replace specific placeholder -return S
     case ASS_najpierwCO: return PSTR(ASS_najpierwCOStr); break;
     case ASS_dbmpressval: return PSTR(ASS_dbmpressvalStr); break;
     case ASS_bm_high: return PSTR(ASS_bm_highStr); break;
+    case ASS_opcohi: return PSTR(ASS_opcohiStr); break;
     case ASS_bm_high_real: return PSTR(ASS_bm_high_realStr); break;
+    case ASS_pump1wo: return PSTR(ASS_pump1woStr); break;
+    case ASS_pump2co: return PSTR(ASS_pump2coStr); break;
+    case ASS_waterThermBG: return PSTR(ASS_waterThermBGStr); break;
+
 
 
 
@@ -182,7 +185,7 @@ void updateDatatoWWW_received(u_int i){ //update local var from received val fro
   log_message(log_chars);
   switch (i) {
     case ASS_forceCObelow:
-      forceCObelow = PayloadtoValidFloat(String(ASS[i].Value), true, cutofflo, cutoffhi);
+      forceCObelow = PayloadtoValidFloat(ASS[i].Value, true, cutofflo, cutoffhi);
       //lastcutOffTempSet = millis();
       break;
     case ASS_forceCO:
@@ -213,13 +216,24 @@ void updateDatatoWWW(){
     if (check_isValidTemp(OutsideTempAvg)) ptrS = String(OutsideTempAvg, decimalPlaces); else ptrS = noTempStr;
     SaveAssValue(ASS_temp_NEWS, ptrS );
     SaveAssValue(ASS_opcohi,              String(opcohi, decimalPlaces) );
+
   // AllSensorsStruct[i].Value = String(ptr);
     if (check_isValidTemp(bmTemp)) ptrS = String(bmTemp, decimalPlaces); else ptrS = noTempStr;
     SaveAssValue(ASS_bmTemp, ptrS );
+    SaveAssValue(ASS_dbmpressval,              String(dbmpressval, decimalPlaces) );
+    SaveAssValue(ASS_bm_high,              String(bm_high, decimalPlaces) );
+    SaveAssValue(ASS_bm_high_real,              String(bm_high_real, decimalPlaces) );
+    SaveAssValue(ASS_dcoval,              String(dcoval, decimalPlaces) );
     if (check_isValidTemp(coTherm)) ptrS = String(coTherm, decimalPlaces); else ptrS = noTempStr;
     SaveAssValue(ASS_coTherm, ptrS );
     if (check_isValidTemp(waterTherm)) ptrS = String(waterTherm, decimalPlaces); else ptrS = noTempStr;
     SaveAssValue(ASS_waterTherm, ptrS );
+    if (check_isValidTemp(ASS_waterThermBG)) ptrS = String(waterThermBG, decimalPlaces); else ptrS = noTempStr;
+    SaveAssValue(ASS_waterThermBG, ptrS );
+    SaveAssValue(ASS_pump1wo, getpumpstatus(1) );
+    SaveAssValue(ASS_pump2co, getpumpstatus(2) );
+
+
     if (check_isValidTemp(NTherm)) ptrS = String(NTherm, decimalPlaces); else ptrS = noTempStr;
     SaveAssValue(ASS_NTherm, ptrS );
     if (check_isValidTemp(ETherm)) ptrS = String(ETherm, decimalPlaces); else ptrS = noTempStr;
@@ -228,17 +242,14 @@ void updateDatatoWWW(){
     SaveAssValue(ASS_WTherm, ptrS );
     if (check_isValidTemp(STherm)) ptrS = String(STherm, decimalPlaces); else ptrS = noTempStr;
     SaveAssValue(ASS_STherm, ptrS );
+
     if (check_isValidTemp(coConstTempCutOff)) ptrS = String(coConstTempCutOff, decimalPlaces); else ptrS = noTempStr;
     SaveAssValue(ASS_coConstTempCutOff, ptrS );
-    SaveAssValue(ASS_dcoval,              String(dcoval, decimalPlaces) );
-    SaveAssValue(ASS_forceCO,              String(forceCO?"1":"0") );
+    SaveAssValue(ASS_forceCO,                 String(forceCO?"1":"0") );
     SaveAssValue(ASS_forceWater,              String(forceWater?"1":"0") );
-    SaveAssValue(ASS_prgstatusrelay1WO,              String(prgstatusrelay1WO?"1":"0") );
-    SaveAssValue(ASS_prgstatusrelay2CO,              String(prgstatusrelay2CO?"1":"0") );
+    SaveAssValue(ASS_prgstatusrelay1WO,       String(prgstatusrelay1WO?"1":"0") );
+    SaveAssValue(ASS_prgstatusrelay2CO,       String(prgstatusrelay2CO?"1":"0") );
     SaveAssValue(ASS_najpierwCO,              String(najpierwCO?"1":"0") );
-    SaveAssValue(ASS_bm_high_real,              String(bm_high_real, decimalPlaces) );
-    SaveAssValue(ASS_bm_high,              String(bm_high, decimalPlaces) );
-    SaveAssValue(ASS_dbmpressval,              String(dbmpressval, decimalPlaces) );
   #endif
 }
 
@@ -255,10 +266,18 @@ String local_specific_web_processor_vars(String var) {
   // } else
 
     if (var == "stopkawebsite0") {
-      ptr =  F("<p><span class=\"units\" id=\"links\">")+String(getlinki())+F("</span></p>");
-      ptr += F("<p><br><span class='units'><a href='")+String(update_path)+F("' target=\"_blank\">")+String(Update_web_link)+F("</a> &nbsp; &nbsp;&nbsp;");
+      ptr =  F("<p><span class=\"units\" id=\"links\">");
+      ptr += getlinki();
+      ptr += F("</span></p>");
+      ptr += F("<p><br><span class='units'><a href='");
+      ptr += String(update_path);
+      ptr += F("' target=\"_blank\">");
+      ptr += String(Update_web_link);
+      ptr += F("</a> &nbsp; &nbsp;&nbsp;");
       #ifdef enableWebSerial
-      ptr += "<a href='/webserial' target=\"_blank\">"+String(Web_Serial)+"</a>&nbsp;";
+      ptr += "<a href='/webserial' target=\"_blank\">";
+      ptr += String(Web_Serial);
+      ptr += "</a>&nbsp;";
       #endif
       ptr += F("<br>&copy; ");
 //      ptr += stopka;
@@ -266,29 +285,29 @@ String local_specific_web_processor_vars(String var) {
   if (var == "bodywstaw") {
     ptr=F("<form action=\"/get\"><table>");
 //    ptr+="<table>";
-    ptr+=F("<p>")+String("tempicon")+F("<span class=\"dht-labels\">")+String(Temp_NEWS)+F("</span><B><span class=\"dht-labels-temp\" id=\"")+String("dallThermometerS")+F("\">&nbsp;<font color=\"Green\">")+(OutsideTempAvg==InitTemp?"--.-":String(OutsideTempAvg))+F("</font></span><sup class=\"units\">&deg;C</sup></B></p>");
+    ptr+=F("<p>"); ptr += String("tempicon"); ptr += F("<span class=\"dht-labels\">"); ptr += String(Temp_NEWS); ptr += F("</span><B><span class=\"dht-labels-temp\" id=\"")+String("dallThermometerS")+F("\">&nbsp;<font color=\"Green\">")+(OutsideTempAvg==InitTemp?"--.-":String(OutsideTempAvg))+F("</font></span><sup class=\"units\">&deg;C</sup></B></p>");
     ptr+=F("<tr><td>");
-    ptr+=F("<p>")+String("tempicon")+F("<span class=\"dht-labels\">")+String(Temp_COHeat)+F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String("dcoThermstat")+F("\">&nbsp;<font color=\"Blue\">")+(coTherm==InitTemp?"--.-":String(coTherm,1))+F("</font></span><sup class=\"units\">&deg;C</sup></B></p>");
+    ptr+=F("<p>")+String("tempicon"); ptr += F("<span class=\"dht-labels\">"); ptr += String(Temp_COHeat); ptr += F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String("dcoThermstat")+F("\">&nbsp;<font color=\"Blue\">")+(coTherm==InitTemp?"--.-":String(coTherm,1))+F("</font></span><sup class=\"units\">&deg;C</sup></B></p>");
     ptr+=F("<td></td");
-    ptr+=F("<p>")+String("tempicon")+F("<span class=\"dht-labels\">")+String(Temp_WaterCOHeat)+F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String("dwaterThermstat")+F("\">&nbsp;<font color=\"blue\">")+(waterTherm==InitTemp?"--.-":String(waterTherm,1))+F("</font></span><sup class=\"units\">&deg;C</sup></B></p>");
+    ptr+=F("<p>")+String("tempicon"); ptr += F("<span class=\"dht-labels\">"); ptr += String(Temp_WaterCOHeat); ptr += F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String("dwaterThermstat")+F("\">&nbsp;<font color=\"blue\">")+(waterTherm==InitTemp?"--.-":String(waterTherm,1))+F("</font></span><sup class=\"units\">&deg;C</sup></B></p>");
     ptr+=F("</td></tr>");
     ptr+=F("<tr><td>");
-    ptr+="<p>"+String("ppmicon")+F("<span class=\"dht-labels\">")+String(pump)+F(" 1 ")+String(CO_heat)+F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String("dpump1")+F("\">&nbsp;")+String(getpumpstatus(1))+F("</span><sup class=\"units\"> </sup></B></p>");
+    ptr+="<p>"+String("ppmicon"); ptr += F("<span class=\"dht-labels\">"); ptr += String(pump)+F(" 1 "); ptr += String(CO_heat); ptr += F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String("dpump1")+F("\">&nbsp;")+String(getpumpstatus(1))+F("</span><sup class=\"units\"> </sup></B></p>");
     ptr+=F("<td></td");
-    ptr+="<p>"+String("ppmicon")+F("<span class=\"dht-labels\">")+String(pump)+F(" 2 ")+String(water)+F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String("dpump2")+F("\">&nbsp;")+String(getpumpstatus(2))+F("</span><sup class=\"units\"> </sup></B></p>");
+    ptr+="<p>"+String("ppmicon"); ptr += F("<span class=\"dht-labels\">"); ptr += String(pump); ptr += F(" 2 "); ptr += String(water); ptr += F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String("dpump2")+F("\">&nbsp;")+String(getpumpstatus(2))+F("</span><sup class=\"units\"> </sup></B></p>");
     ptr+=F("</td></tr>");
   } else
 if (var == "bodywstaw1") {
     //if (NTherm==InitTemp) wart="--.--"; else wart=NTherm;
     ptr+=F("<tr><td>");
-    ptr+=F("<p>")+String("attiicon")+F("<span class=\"dht-labels\">")+String(Attitude)+F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String("dbmhigh")+F("\">&nbsp;")+String(bm_high,0)+F("</span><sup class=\"units\">mnpm</sup></B></p>");
+    ptr+=F("<p>")+String("attiicon"); ptr += F("<span class=\"dht-labels\">"); ptr += String(Attitude); ptr += F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String("dbmhigh")+F("\">&nbsp;")+String(bm_high,0)+F("</span><sup class=\"units\">mnpm</sup></B></p>");
     ptr+=F("<td></td");
-    ptr+=F("<p>")+String("attiicon")+F("<span class=\"dht-labels\">")+String(Attitude_real)+F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String("dbmhighr")+F("\">&nbsp;")+String(bm_high_real,0)+F("</span><sup class=\"units\">mnpm</sup></B></p>");
+    ptr+=F("<p>")+String("attiicon"); ptr += F("<span class=\"dht-labels\">")+String(Attitude_real); ptr += F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String("dbmhighr")+F("\">&nbsp;")+String(bm_high_real,0)+F("</span><sup class=\"units\">mnpm</sup></B></p>");
     ptr+=F("</td></tr>");
     ptr+=F("<tr><td>");
-    ptr+=F("<p>")+String("presicon")+F("<span class=\"dht-labels\">")+String(Pressure)+F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String("dbmpressure")+F("\">&nbsp;")+String(dbmpressval)+F("</span><sup class=\"units\">hPa</sup></B></p>");
+    ptr+=F("<p>")+String("presicon"); ptr += F("<span class=\"dht-labels\">"); ptr += String(Pressure); ptr += F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String("dbmpressure")+F("\">&nbsp;")+String(dbmpressval)+F("</span><sup class=\"units\">hPa</sup></B></p>");
     ptr+=F("<td></td");
-    ptr+=F("<p>")+String("ppmicon")+F("<span class=\"dht-labels\">")+String(GAS_CO)+F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String("dcoS")+F("\">&nbsp;")+String(dcoval)+F("</span><sup class=\"units\">ppm</sup></B></p>");
+    ptr+=F("<p>")+String("ppmicon"); ptr += F("<span class=\"dht-labels\">"); ptr += String(GAS_CO); ptr += F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String("dcoS")+F("\">&nbsp;")+String(dcoval)+F("</span><sup class=\"units\">ppm</sup></B></p>");
     ptr+=F("</td></tr>");
     ptr+=F("<tr><td>");
     //if (NTherm<-100 or NTherm>100) wart="-.--"; else wart=String(NTherm);
