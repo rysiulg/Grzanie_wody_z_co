@@ -321,7 +321,7 @@ bool check_isValidTemp(float temptmp);
 #if defined enableMQTT || defined enableMQTTAsync
 uint16_t publishMQTT(String &mqttTopicxx, String &mqttPayloadxx, int mqtt_Retainv, u_int qos);
 uint16_t SubscribeMQTT(String &mqttTopicxx, u_int qos);
-void HADiscovery(String sensorswitchValTopic, String appendname, String nameval, String discoverytopic, String DeviceClass, String unitClass, String stateClass, String HAicon, const String payloadvalue_startend_val, const String payloadON, const String payloadOFF);
+void HADiscovery(String sensorswitchValTopic, String appendname, String nameval, String discoverytopic, String DeviceClass, String unitClass, String stateClass, String HAicon, const String payloadvalue_startend_val, const String payloadON, const String payloadOFF, const String sensorswitchSETTopic);
 #endif //enableMQTTAsync
 void log_message(char* string, u_int specialforce);
 String uptimedana(unsigned long started_local, bool startFromZero, bool forlogall);
@@ -601,11 +601,11 @@ void log_message(char* string, u_int specialforce = logStandard)  //         log
 //Publish to MQTT Topic
 uint16_t publishMQTT(String &mqttTopicxx, String &mqttPayloadxx, int mqtt_Retainv = 1, u_int qos = 0) {
     char mqttPayloadSend [maxLenMQTTPayload];
-    // if (mqttPayloadxx.indexOf(",")>-1) {
+     if (mqttPayloadxx.indexOf("\":")>-1) {
       sprintf(mqttPayloadSend, "{%s}", mqttPayloadxx.c_str());
-    // } else {
-    //   sprintf(mqttPayloadSend, "%s", mqttPayloadxx.c_str());
-    // }
+     } else {
+       sprintf(mqttPayloadSend, "%s", mqttPayloadxx.c_str());
+     }
     #ifdef debug2
     sprintf(log_chars, "(publishMQTT) MQTT Topic %s Size: %u, Payload Size: %u", mqttTopicxx.c_str(), (u_int)mqttTopicxx.length(), (u_int)mqttPayloadxx.length());
     log_message(log_chars);
@@ -642,7 +642,7 @@ uint16_t SubscribeMQTT(String &mqttTopicxx, u_int qos){
 #endif
 //***********************************************************************************************************************************************************************************************
 #if defined enableMQTT || defined enableMQTTAsync
-void HADiscovery(String sensorswitchValTopic, String appendname, String nameval, String discoverytopic, String DeviceClass = "\0", String unitClass = "\0", String stateClass = "\0", String HAicon = "\0", const String payloadvalue_startend_val = "", const String payloadON = "1", const String payloadOFF = "0")
+void HADiscovery(String sensorswitchValTopic, String appendname, String nameval, String discoverytopic, String DeviceClass = "\0", String unitClass = "\0", String stateClass = "\0", String HAicon = "\0", const String payloadvalue_startend_val = "", const String payloadON = "1", const String payloadOFF = "0", const String sensorswitchSETTopic = "")
 {
   const String deviceid = ",\"dev\":{\"ids\":\""+String(me_lokalizacja)+"\",\"name\":\""+String(me_lokalizacja)+"\",\"sw\":\"" + String(version) + "\",\"mdl\":\""+String(me_lokalizacja)+"\",\"mf\":\"" + String(MFG) + "\"}";
   const String availabityTopic = ",\"avty_t\":\"" + String(WILL_TOPIC) + "\",\"pl_avail\":\"" + String(WILL_ONLINE) + "\",\"pl_not_avail\":\"" + String(WILL_OFFLINE) + "\"";
@@ -712,6 +712,10 @@ void HADiscovery(String sensorswitchValTopic, String appendname, String nameval,
 
       case switchswitch: {
         unitbuilder = F(",\"pl_off\":\"OFF\",\"pl_on\":\"ON\"");
+        unitbuilder += F(",\"command_topic\":\"");
+        unitbuilder += sensorswitchSETTopic;
+        unitbuilder += F("\"");
+
         // if (unitClass.length() == 0 || unitClass == " ") unitClass = "m";
         // if (HAicon.length() == 0) HAicon = "mdi:speedometer-medium"; //fire";
         break;

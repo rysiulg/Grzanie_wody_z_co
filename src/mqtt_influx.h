@@ -33,7 +33,7 @@ void mqttCallbackAsString(String &topicStrFromMQTT, String &payloadStrFromMQTT) 
       log_message(log_chars);
       waterThermBG_LastRead = millis();
       //      receivedmqttdata = true;    //makes every second run mqtt send and influx
-      
+
     } else {
       //sprintf(log_chars, "%s not updated from MQTT: %s, %s", ident.c_str(), getJsonVal(payloadStrFromMQTT, String(NEWStemp_json)).c_str(), String(PayloadtoValidFloatCheck(getJsonVal(payloadStrFromMQTT, String(NEWStemp_json)))).c_str());
       log_message(log_chars);
@@ -136,7 +136,7 @@ void mqttCallbackAsString(String &topicStrFromMQTT, String &payloadStrFromMQTT) 
 void updateMQTTData()
 {
   String mqttdeviceid = String(BASE_TOPIC);
-  const String payloadvalue_startend_val = F(" "); // value added before and after value send to mqtt queue
+  const String payloadvalue_startend_val = F(""); // value added before and after value send to mqtt queue
   String tmpbuilder = F("\0");
   // char mqttTopic[maxLenMQTTTopic] = {'\0'};
   // char mqttPayload[maxLenMQTTTopic] = {'\0'};
@@ -206,13 +206,12 @@ void updateMQTTData()
     HADiscovery(BR_MEDIA_SENSOR_TOPIC, "\0", BOILERROOM_PUMP1WA_E, BOILERROOM_HA_SENSOR_TOPIC, "energy");   // mqttHAPublish_Config(BOILERROOM_HA_SENSOR_TOPIC, BOILERROOM_SENSOR_TOPIC, BOILERROOM_PUMP1WA_E, dpump1energyS, mqtt_HAClass_energy);
     HADiscovery(BR_MEDIA_SENSOR_TOPIC, "\0", BOILERROOM_PUMP2CO_E, BOILERROOM_HA_SENSOR_TOPIC, "energy");   //mqttHAPublish_Config(BOILERROOM_HA_SENSOR_TOPIC, BOILERROOM_SENSOR_TOPIC, BOILERROOM_PUMP2CO_E, dpump2energyS, mqtt_HAClass_energy);
     //pumps switch/state
-    HADiscovery(BOILERROOM_SWITCH_TOPIC, "\0", BOILERROOM_PUMP1WA, BOILERROOM_HA_SWITCH_TOPIC, "switch");   //mqttHAPublish_Config(BOILERROOM_HA_SWITCH_TOPIC, BOILERROOM_SWITCH_TOPIC, BOILERROOM_PUMP1WA, dpump1, mqtt_HAClass_switch, BOILERROOM_SWITCH_TOPIC_SET);
-    HADiscovery(BOILERROOM_SWITCH_TOPIC, "\0", BOILERROOM_PUMP2CO, BOILERROOM_HA_SWITCH_TOPIC, "switch");   //mqttHAPublish_Config(BOILERROOM_HA_SWITCH_TOPIC, BOILERROOM_SWITCH_TOPIC, BOILERROOM_PUMP2CO, dpump2, mqtt_HAClass_switch, BOILERROOM_SWITCH_TOPIC_SET);
+    HADiscovery(BOILERROOM_SWITCH_TOPIC, "\0", BOILERROOM_PUMP1WA, BOILERROOM_HA_SWITCH_TOPIC, "switch", "\0", "\0", "\0", "", "1", "0", BOILERROOM_SWITCH_TOPIC_SET);   //mqttHAPublish_Config(BOILERROOM_HA_SWITCH_TOPIC, BOILERROOM_SWITCH_TOPIC, BOILERROOM_PUMP1WA, dpump1, mqtt_HAClass_switch, BOILERROOM_SWITCH_TOPIC_SET);
+    HADiscovery(BOILERROOM_SWITCH_TOPIC, "\0", BOILERROOM_PUMP2CO, BOILERROOM_HA_SWITCH_TOPIC, "switch", "\0", "\0", "\0", "", "1", "0", BOILERROOM_SWITCH_TOPIC_SET);   //mqttHAPublish_Config(BOILERROOM_HA_SWITCH_TOPIC, BOILERROOM_SWITCH_TOPIC, BOILERROOM_PUMP2CO, dpump2, mqtt_HAClass_switch, BOILERROOM_SWITCH_TOPIC_SET);
   }
     log_message((char*)F("MQTT Data Sended..."));
 }
 #endif
-
 
 
 
