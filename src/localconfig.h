@@ -119,7 +119,8 @@ unsigned long  C_W_delay = 8000,      // config delay 10 seconds
                lastReadTime2 = 0,                //time last energy2 read
                lastEnergyRead = 0,
                lastCOReadTime = 0,
-               lastReadTimeTemps = 0;
+               lastReadTimeTemps = 0,
+               waterThermBG_LastRead = 0;       //time read waterThermBG_LastRead
 
 const float panic = 70.0; //temperatura dla paniki -przekroczenia na piecu
 

@@ -101,20 +101,20 @@ String getpumpstatus(uint8_t pompa) {
   if (pompa == 1) {
     String ptr;
     if (!prgstatusrelay1WO or pump1energyLast < pumpmincurrent) {  //digitalRead(relay1) == HIGH
-      ptr = F("<B>Stoi</B> ");
+      ptr = F("<b>Stoi</b> ");
       ptr += getkWh(pump1energyLast);
-      ptr += F("W</B><BR>");
+      ptr += F("W</b><br>");
       if (najpierwCO) {
-        ptr += F("<font color=\"red\"><sup class='units'>Zmiana priorytetu na CO: ");
+        ptr += F("<font color=\'red\'><sup class='units'>Zmiana priorytetu na CO: ");
         ptr += String(najpierwCO);
         ptr += F("</sup></font>");
       }
     } else {
-      ptr = F("<B><font color=\"red\">Chodzi</font> ");
+      ptr = F("<b><font color=\'red\'>Chodzi</font> ");
       ptr += getkWh(pump1energyLast);
-      ptr += F("W</B><BR>");
+      ptr += F("W</b><br>");
       if (najpierwCO) {
-        ptr += F("<font color=\"red\"><sup class='units'>Zmiana priorytetu na CO: ");
+        ptr += F("<font color=\'red\'><sup class='units'>Zmiana priorytetu na CO: ");
         ptr += String(najpierwCO);
         ptr += F("</sup></font>");
       }
@@ -122,16 +122,16 @@ String getpumpstatus(uint8_t pompa) {
   } else {
     String ptr;
     if (!prgstatusrelay2CO or pump2energyLast < pumpmincurrent) {  //digitalRead(relay2) == HIGH
-      ptr = F("<B>Stoi</B> ");
+      ptr = F("<b>Stoi</b> ");
       ptr += getkWh(pump2energyLast);
-      ptr += F("W</B><BR>");
+      ptr += F("W</b><br>");
       ptr += F("<sup class='units'>histereza: ");
       ptr += String(histereza);
       ptr += F("</sup>");
     } else {
-      ptr = F("<B><font color=\"red\">Chodzi</font> ");
+      ptr = F("<b><font color=\'red\'>Chodzi</font> ");
       ptr += getkWh(pump2energyLast);
-      ptr += F("W</B><BR> <sup class='units'>histereza: ");
+      ptr += F("W</b><br> <sup class='units'>histereza: ");
       ptr += String(histereza);
       ptr += F("</sup>");
     } return String(ptr);
@@ -171,9 +171,8 @@ String get_PlaceholderName(u_int i){    //replace specific placeholder -return S
     case ASS_pump1wo: return PSTR(ASS_pump1woStr); break;
     case ASS_pump2co: return PSTR(ASS_pump2coStr); break;
     case ASS_waterThermBG: return PSTR(ASS_waterThermBGStr); break;
-
-
-
+    case ASS_waterThermBGtime: return PSTR(ASS_waterThermBGtimeStr); break;
+    case ASS_UsedMedia: return PSTR(ASS_UsedMediaStr); break;
 
 
   }
@@ -184,10 +183,6 @@ void updateDatatoWWW_received(u_int i){ //update local var from received val fro
   sprintf(log_chars, "Received data nr: %s", String(i).c_str());
   log_message(log_chars);
   switch (i) {
-    case ASS_forceCObelow:
-      forceCObelow = PayloadtoValidFloat(ASS[i].Value, true, cutofflo, cutoffhi);
-      //lastcutOffTempSet = millis();
-      break;
     case ASS_forceCO:
       forceCO = PayloadStatus(ASS[i].Value, true);
       break;
@@ -203,6 +198,14 @@ void updateDatatoWWW_received(u_int i){ //update local var from received val fro
     case ASS_najpierwCO:
       najpierwCO = PayloadStatus(ASS[i].Value, true);
       break;
+    case ASS_coConstTempCutOff:
+      coConstTempCutOff = PayloadtoValidFloat(ASS[i].Value, true, 20, 40);
+      break;
+    case ASS_forceCObelow:
+      forceCObelow = PayloadtoValidFloat(ASS[i].Value, true, -4, 15);
+      //lastcutOffTempSet = millis();
+      break;
+
   }
 }
 
@@ -220,16 +223,18 @@ void updateDatatoWWW(){
   // AllSensorsStruct[i].Value = String(ptr);
     if (check_isValidTemp(bmTemp)) ptrS = String(bmTemp, decimalPlaces); else ptrS = noTempStr;
     SaveAssValue(ASS_bmTemp, ptrS );
-    SaveAssValue(ASS_dbmpressval,              String(dbmpressval, decimalPlaces) );
-    SaveAssValue(ASS_bm_high,              String(bm_high, decimalPlaces) );
-    SaveAssValue(ASS_bm_high_real,              String(bm_high_real, decimalPlaces) );
-    SaveAssValue(ASS_dcoval,              String(dcoval, decimalPlaces) );
+    SaveAssValue(ASS_dbmpressval,         String(dbmpressval) );
+    SaveAssValue(ASS_bm_high,             String(bm_high) );
+    SaveAssValue(ASS_bm_high_real,        String(bm_high_real) );
+    SaveAssValue(ASS_dcoval,              String(dcoval) );
     if (check_isValidTemp(coTherm)) ptrS = String(coTherm, decimalPlaces); else ptrS = noTempStr;
     SaveAssValue(ASS_coTherm, ptrS );
     if (check_isValidTemp(waterTherm)) ptrS = String(waterTherm, decimalPlaces); else ptrS = noTempStr;
     SaveAssValue(ASS_waterTherm, ptrS );
     if (check_isValidTemp(ASS_waterThermBG)) ptrS = String(waterThermBG, decimalPlaces); else ptrS = noTempStr;
     SaveAssValue(ASS_waterThermBG, ptrS );
+    SaveAssValue(ASS_waterThermBGtime, uptimedana(waterThermBG_LastRead) );
+
     SaveAssValue(ASS_pump1wo, getpumpstatus(1) );
     SaveAssValue(ASS_pump2co, getpumpstatus(2) );
 
@@ -243,13 +248,25 @@ void updateDatatoWWW(){
     if (check_isValidTemp(STherm)) ptrS = String(STherm, decimalPlaces); else ptrS = noTempStr;
     SaveAssValue(ASS_STherm, ptrS );
 
-    if (check_isValidTemp(coConstTempCutOff)) ptrS = String(coConstTempCutOff, decimalPlaces); else ptrS = noTempStr;
-    SaveAssValue(ASS_coConstTempCutOff, ptrS );
+
     SaveAssValue(ASS_forceCO,                 String(forceCO?"1":"0") );
     SaveAssValue(ASS_forceWater,              String(forceWater?"1":"0") );
     SaveAssValue(ASS_prgstatusrelay1WO,       String(prgstatusrelay1WO?"1":"0") );
     SaveAssValue(ASS_prgstatusrelay2CO,       String(prgstatusrelay2CO?"1":"0") );
     SaveAssValue(ASS_najpierwCO,              String(najpierwCO?"1":"0") );
+
+    ptrS = F("<br> Energy 1 used WODA: <b>");
+    ptrS += String(energy1used,4);
+    ptrS += F("kWh</b><br>, Energy 2 used CO: <b>");
+    ptrS += String(energy2used,4);
+    ptrS += F("kWh</b><br> ADS initialised: <b>");
+    ptrS += String(isadslinitialised ? "Tak" : "Nie");
+    ptrS += F("</B>");
+    SaveAssValue(ASS_UsedMedia, ptrS);
+
+    SaveAssValue(ASS_coConstTempCutOff, String(coConstTempCutOff, decimalPlaces));
+    SaveAssValue(ASS_forceCObelow, String(forceCObelow, decimalPlaces));
+
   #endif
 }
 
@@ -259,81 +276,73 @@ String local_specific_web_processor_vars(String var) {
   sprintf(log_chars,"Processing specific local processor: %s",var.c_str());
   log_message(log_chars);
   #endif
-  String ptr;
-  // if (var == "histlo") { return String(histlo, decimalPlaces);
-  // } else
-  // if (var == "histhi") { return String(histhi, decimalPlaces);
-  // } else
 
-    if (var == "stopkawebsite0") {
-      ptr =  F("<p><span class=\"units\" id=\"links\">");
-      ptr += getlinki();
-      ptr += F("</span></p>");
-      ptr += F("<p><br><span class='units'><a href='");
-      ptr += String(update_path);
-      ptr += F("' target=\"_blank\">");
-      ptr += String(Update_web_link);
-      ptr += F("</a> &nbsp; &nbsp;&nbsp;");
-      #ifdef enableWebSerial
-      ptr += "<a href='/webserial' target=\"_blank\">";
-      ptr += String(Web_Serial);
-      ptr += "</a>&nbsp;";
-      #endif
-      ptr += F("<br>&copy; ");
-//      ptr += stopka;
+  if (var == "SUPLA_VOLT_TOPIC") { return String(SUPLA_VOLT_TOPIC);
   } else
-  if (var == "bodywstaw") {
-    ptr=F("<form action=\"/get\"><table>");
-//    ptr+="<table>";
-    ptr+=F("<p>"); ptr += String("tempicon"); ptr += F("<span class=\"dht-labels\">"); ptr += String(Temp_NEWS); ptr += F("</span><B><span class=\"dht-labels-temp\" id=\"")+String("dallThermometerS")+F("\">&nbsp;<font color=\"Green\">")+(OutsideTempAvg==InitTemp?"--.-":String(OutsideTempAvg))+F("</font></span><sup class=\"units\">&deg;C</sup></B></p>");
-    ptr+=F("<tr><td>");
-    ptr+=F("<p>")+String("tempicon"); ptr += F("<span class=\"dht-labels\">"); ptr += String(Temp_COHeat); ptr += F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String("dcoThermstat")+F("\">&nbsp;<font color=\"Blue\">")+(coTherm==InitTemp?"--.-":String(coTherm,1))+F("</font></span><sup class=\"units\">&deg;C</sup></B></p>");
-    ptr+=F("<td></td");
-    ptr+=F("<p>")+String("tempicon"); ptr += F("<span class=\"dht-labels\">"); ptr += String(Temp_WaterCOHeat); ptr += F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String("dwaterThermstat")+F("\">&nbsp;<font color=\"blue\">")+(waterTherm==InitTemp?"--.-":String(waterTherm,1))+F("</font></span><sup class=\"units\">&deg;C</sup></B></p>");
-    ptr+=F("</td></tr>");
-    ptr+=F("<tr><td>");
-    ptr+="<p>"+String("ppmicon"); ptr += F("<span class=\"dht-labels\">"); ptr += String(pump)+F(" 1 "); ptr += String(CO_heat); ptr += F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String("dpump1")+F("\">&nbsp;")+String(getpumpstatus(1))+F("</span><sup class=\"units\"> </sup></B></p>");
-    ptr+=F("<td></td");
-    ptr+="<p>"+String("ppmicon"); ptr += F("<span class=\"dht-labels\">"); ptr += String(pump); ptr += F(" 2 "); ptr += String(water); ptr += F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String("dpump2")+F("\">&nbsp;")+String(getpumpstatus(2))+F("</span><sup class=\"units\"> </sup></B></p>");
-    ptr+=F("</td></tr>");
+  if (var == "SUPLA_FREQ_TOPIC") { return String(SUPLA_FREQ_TOPIC);
   } else
-if (var == "bodywstaw1") {
-    //if (NTherm==InitTemp) wart="--.--"; else wart=NTherm;
-    ptr+=F("<tr><td>");
-    ptr+=F("<p>")+String("attiicon"); ptr += F("<span class=\"dht-labels\">"); ptr += String(Attitude); ptr += F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String("dbmhigh")+F("\">&nbsp;")+String(bm_high,0)+F("</span><sup class=\"units\">mnpm</sup></B></p>");
-    ptr+=F("<td></td");
-    ptr+=F("<p>")+String("attiicon"); ptr += F("<span class=\"dht-labels\">")+String(Attitude_real); ptr += F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String("dbmhighr")+F("\">&nbsp;")+String(bm_high_real,0)+F("</span><sup class=\"units\">mnpm</sup></B></p>");
-    ptr+=F("</td></tr>");
-    ptr+=F("<tr><td>");
-    ptr+=F("<p>")+String("presicon"); ptr += F("<span class=\"dht-labels\">"); ptr += String(Pressure); ptr += F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String("dbmpressure")+F("\">&nbsp;")+String(dbmpressval)+F("</span><sup class=\"units\">hPa</sup></B></p>");
-    ptr+=F("<td></td");
-    ptr+=F("<p>")+String("ppmicon"); ptr += F("<span class=\"dht-labels\">"); ptr += String(GAS_CO); ptr += F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String("dcoS")+F("\">&nbsp;")+String(dcoval)+F("</span><sup class=\"units\">ppm</sup></B></p>");
-    ptr+=F("</td></tr>");
-    ptr+=F("<tr><td>");
-    //if (NTherm<-100 or NTherm>100) wart="-.--"; else wart=String(NTherm);
-    ptr+=String("<p>")+String("tempicon")+F("<span class=\"dht-labels\">")+String(Temp_N)+F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String("dNThermometerS")+F("\">&nbsp;")+(NTherm==InitTemp?"--.-":String(NTherm,1))+F("</span><sup class=\"units\">&deg;C</sup></B></p>");
-    ptr+=F("</td><td>");
-    //if (ETherm<-100 or ETherm>100) wart="-.--"; else wart=String(ETherm);
-    ptr+="<p>"+String("tempicon")+F("<span class=\"dht-labels\">")+String(Temp_E)+F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String("dEThermometerS")+F("\">&nbsp;")+(ETherm==InitTemp?"--.-":String(ETherm,1))+F("</span><sup class=\"units\">&deg;C</sup></B></p>");
-    ptr+=F("</td></tr><tr><td>");
+  if (var == "BOILER_GAZ_CWU_TOPIC") { return String(BOILER_GAZ_CWU_TOPIC);
   } else
-if (var == "bodywstaw2") {
-    //if (WTherm<-100 or WTherm>100) wart="-.--"; else wart=String(WTherm);
-    ptr+=F("<p>")+String("tempicon")+F("<span class=\"dht-labels\">")+String(Temp_W)+F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String("dWThermometerS")+F("\">&nbsp;")+(WTherm==InitTemp?"--.-":String(WTherm,1))+F("</span><sup class=\"units\">&deg;C</sup></B></p>");
-    ptr+=F("</td><td>");
-    //if (STherm<-100 or STherm>100) wart="-.--"; else wart=String(ETherm);
-    ptr+=F("<p>")+String("tempicon")+F("<span class=\"dht-labels\">")+String(Temp_S)+F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String("dSThermometerS")+F("\">&nbsp;")+(STherm==InitTemp?"--.-":String(STherm,1))+F("</span><sup class=\"units\">&deg;C</sup></B></p>");
-    ptr+=F("</td></tr>");
-    ptr+=F("<tr><td>");
-    ptr+=F("<p>")+String("tempicon")+F("<span class=\"dht-labels\">")+String(Temp_BoilerRoom)+F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String("dbmtemperature")+F("\">&nbsp;")+String(bmTemp,1)+F("</span><sup class=\"units\">&deg;C</sup></B></p>");
-    ptr+=F("</td></tr>");
-    ptr+=F("</table></form>");
-    #ifdef debug
-    Serial.print(String(millis())+F(": www BODYWSTAW len: "));
-    Serial.println(ptr.length());
-    #endif
+  if (var == "BOILER_GAZ_CWU_JSON") { return String(BOILER_GAZ_CWU_JSON);
+  } else
+  if (var == "UsedMedia") { return String(ASS[ASS_UsedMedia].Value );
   }
-  return ptr;
+  return "\0";
+
+  // String ptr;
+
+//   if (var == "bodywstaw") {
+//     ptr=F("<form action=\"/get\"><table>");
+// //    ptr+="<table>";
+//     ptr+=F("<p>"); ptr += String("tempicon"); ptr += F("<span class=\"dht-labels\">"); ptr += String(Temp_NEWS); ptr += F("</span><B><span class=\"dht-labels-temp\" id=\"")+String("dallThermometerS")+F("\">&nbsp;<font color=\"Green\">")+(OutsideTempAvg==InitTemp?"--.-":String(OutsideTempAvg))+F("</font></span><sup class=\"units\">&deg;C</sup></B></p>");
+//     ptr+=F("<tr><td>");
+//     ptr+=F("<p>")+String("tempicon"); ptr += F("<span class=\"dht-labels\">"); ptr += String(Temp_COHeat); ptr += F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String("dcoThermstat")+F("\">&nbsp;<font color=\"Blue\">")+(coTherm==InitTemp?"--.-":String(coTherm,1))+F("</font></span><sup class=\"units\">&deg;C</sup></B></p>");
+//     ptr+=F("<td></td");
+//     ptr+=F("<p>")+String("tempicon"); ptr += F("<span class=\"dht-labels\">"); ptr += String(Temp_WaterCOHeat); ptr += F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String("dwaterThermstat")+F("\">&nbsp;<font color=\"blue\">")+(waterTherm==InitTemp?"--.-":String(waterTherm,1))+F("</font></span><sup class=\"units\">&deg;C</sup></B></p>");
+//     ptr+=F("</td></tr>");
+//     ptr+=F("<tr><td>");
+//     ptr+="<p>"+String("ppmicon"); ptr += F("<span class=\"dht-labels\">"); ptr += String(pump)+F(" 1 "); ptr += String(CO_heat); ptr += F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String("dpump1")+F("\">&nbsp;")+String(getpumpstatus(1))+F("</span><sup class=\"units\"> </sup></B></p>");
+//     ptr+=F("<td></td");
+//     ptr+="<p>"+String("ppmicon"); ptr += F("<span class=\"dht-labels\">"); ptr += String(pump); ptr += F(" 2 "); ptr += String(water); ptr += F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String("dpump2")+F("\">&nbsp;")+String(getpumpstatus(2))+F("</span><sup class=\"units\"> </sup></B></p>");
+//     ptr+=F("</td></tr>");
+//   } else
+// if (var == "bodywstaw1") {
+//     //if (NTherm==InitTemp) wart="--.--"; else wart=NTherm;
+//     ptr+=F("<tr><td>");
+//     ptr+=F("<p>")+String("attiicon"); ptr += F("<span class=\"dht-labels\">"); ptr += String(Attitude); ptr += F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String("dbmhigh")+F("\">&nbsp;")+String(bm_high,0)+F("</span><sup class=\"units\">mnpm</sup></B></p>");
+//     ptr+=F("<td></td");
+//     ptr+=F("<p>")+String("attiicon"); ptr += F("<span class=\"dht-labels\">")+String(Attitude_real); ptr += F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String("dbmhighr")+F("\">&nbsp;")+String(bm_high_real,0)+F("</span><sup class=\"units\">mnpm</sup></B></p>");
+//     ptr+=F("</td></tr>");
+//     ptr+=F("<tr><td>");
+//     ptr+=F("<p>")+String("presicon"); ptr += F("<span class=\"dht-labels\">"); ptr += String(Pressure); ptr += F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String("dbmpressure")+F("\">&nbsp;")+String(dbmpressval)+F("</span><sup class=\"units\">hPa</sup></B></p>");
+//     ptr+=F("<td></td");
+//     ptr+=F("<p>")+String("ppmicon"); ptr += F("<span class=\"dht-labels\">"); ptr += String(GAS_CO); ptr += F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String("dcoS")+F("\">&nbsp;")+String(dcoval)+F("</span><sup class=\"units\">ppm</sup></B></p>");
+//     ptr+=F("</td></tr>");
+//     ptr+=F("<tr><td>");
+//     //if (NTherm<-100 or NTherm>100) wart="-.--"; else wart=String(NTherm);
+//     ptr+=String("<p>")+String("tempicon")+F("<span class=\"dht-labels\">")+String(Temp_N)+F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String("dNThermometerS")+F("\">&nbsp;")+(NTherm==InitTemp?"--.-":String(NTherm,1))+F("</span><sup class=\"units\">&deg;C</sup></B></p>");
+//     ptr+=F("</td><td>");
+//     //if (ETherm<-100 or ETherm>100) wart="-.--"; else wart=String(ETherm);
+//     ptr+="<p>"+String("tempicon")+F("<span class=\"dht-labels\">")+String(Temp_E)+F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String("dEThermometerS")+F("\">&nbsp;")+(ETherm==InitTemp?"--.-":String(ETherm,1))+F("</span><sup class=\"units\">&deg;C</sup></B></p>");
+//     ptr+=F("</td></tr><tr><td>");
+//   } else
+// if (var == "bodywstaw2") {
+//     //if (WTherm<-100 or WTherm>100) wart="-.--"; else wart=String(WTherm);
+//     ptr+=F("<p>")+String("tempicon")+F("<span class=\"dht-labels\">")+String(Temp_W)+F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String("dWThermometerS")+F("\">&nbsp;")+(WTherm==InitTemp?"--.-":String(WTherm,1))+F("</span><sup class=\"units\">&deg;C</sup></B></p>");
+//     ptr+=F("</td><td>");
+//     //if (STherm<-100 or STherm>100) wart="-.--"; else wart=String(ETherm);
+//     ptr+=F("<p>")+String("tempicon")+F("<span class=\"dht-labels\">")+String(Temp_S)+F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String("dSThermometerS")+F("\">&nbsp;")+(STherm==InitTemp?"--.-":String(STherm,1))+F("</span><sup class=\"units\">&deg;C</sup></B></p>");
+//     ptr+=F("</td></tr>");
+//     ptr+=F("<tr><td>");
+//     ptr+=F("<p>")+String("tempicon")+F("<span class=\"dht-labels\">")+String(Temp_BoilerRoom)+F("</span><BR><B><span class=\"dht-labels-temp\" id=\"")+String("dbmtemperature")+F("\">&nbsp;")+String(bmTemp,1)+F("</span><sup class=\"units\">&deg;C</sup></B></p>");
+//     ptr+=F("</td></tr>");
+//     ptr+=F("</table></form>");
+//     #ifdef debug
+//     Serial.print(String(millis())+F(": www BODYWSTAW len: "));
+//     Serial.println(ptr.length());
+//     #endif
+//   }
+//   return ptr;
 }
 
   #ifndef enableWebSocket
@@ -573,25 +582,17 @@ String do_stopkawebsite() {
 String getlinki() {
   String ptr;
   wdt_reset();
-  #ifdef debug
-//      Serial.print(F("GetLinki: "));
-//      Serial.println(ptr);
-  #endif
   ptr = F("\0");
   if (checkUnassignedSensors().length()>0) {
-    ptr += F("<br><sup class='units'>");
+    ptr += F("<sup class='units'>");
     ptr += String(checkUnassignedSensors()); //UnassignedSensors;
     ptr += F("</sup>");
   }
-  ptr += F("<br>wymusza pompe CO poniżej temperatury średniej zewnetrznej: &nbsp;");
+  ptr += F("<br>wymusza pompe CO &lt; temperatury średniej zew.: &nbsp;");
   ptr += String(forceCObelow);
-  ptr += F("<br>Temperatura graniczna na wymienniku oznacza ze piec sie grzeje: &nbsp;");
+  ptr += F("<br>Próg temp. wymiennika oznacza, że piec aktywny: &nbsp;");
   ptr += String(coConstTempCutOff);
 
-  #ifdef debug
- //     Serial.print(F("Endlinki: "));
- //     Serial.println(ptr);
-    #endif
   return ptr.c_str();
 }
 
@@ -876,114 +877,73 @@ void gas_leak_check() {
     //      debugA("Gas leakage... steżenie: %d ppm",gasCOMeterS->getlast());
   }
 }
-bool loadConfig_old() {
-  // is it correct?
-  // if (sizeof(CONFIGURATION)<1024) EEPROM.begin(1024); else EEPROM.begin(sizeof(CONFIGURATION)+128); //Size can be anywhere between 4 and 4096 bytes.
-  // EEPROM.get(1,CRTrunNumber);
-  // if (isnan(CRTrunNumber)) CRTrunNumber=0;
-  // CRTrunNumber++;
-  // EEPROM.get(1+sizeof(CRTrunNumber),energy1used);
-  // if (isnan(energy1used)) energy1used = 0;
-  // EEPROM.get(1+sizeof(CRTrunNumber)+sizeof(energy1used),energy2used);
-  // if (isnan(energy2used)) energy2used = 0;
-  // if (EEPROM.read(CONFIG_START + 0) == CONFIG_VERSION[0] &&
-  //     EEPROM.read(CONFIG_START + 1) == CONFIG_VERSION[1] &&
-  //     EEPROM.read(CONFIG_START + 2) == CONFIG_VERSION[2] &&
-  //     EEPROM.read(CONFIG_START + 3) == CONFIG_VERSION[3] &&
-  //     EEPROM.read(CONFIG_START + 4) == CONFIG_VERSION[4]){
 
-  // // load (overwrite) the local configuration struct
-  //   for (unsigned int i=0; i<sizeof(configuration_type); i++){
-  //     *((char*)&CONFIGURATION + i) = EEPROM.read(CONFIG_START + i);
-  //   }
-    // strcpy(ssid, CONFIGURATION.ssid);
-    // strcpy(pass, CONFIGURATION.pass);
-    // strcpy(mqtt_server, CONFIGURATION.mqtt_server);
-    // strcpy(mqtt_user, CONFIGURATION.mqtt_user);
-    // strcpy(mqtt_password, CONFIGURATION.mqtt_password);
-    // mqtt_port = CONFIGURATION.mqtt_port;
-    // najpierwCO = CONFIGURATION.najpierwCO;
-    // if (najpierwCO == true) waitCOStartingmargin=millis();
-    // coConstTempCutOff = CONFIGURATION.coConstTempCutOff;
-    // forceCObelow = CONFIGURATION.forceCObelow;
-    // histereza = CONFIGURATION.histereza;
-    // forceWater = CONFIGURATION.forceWater;
-    // forceCO = CONFIGURATION.forceCO;
-
-  //   return true; // return 1 if config loaded
-  // }
-  //try get only my important values
-
-  return false; // return 0 if config NOT loaded
+String addusage_local_values_save(int EpromPosition){
+  String savetmp = SaveEnergy(EpromPosition);
+  savetmp += build_JSON_Payload(F("coConstTempCutOff"), String(coConstTempCutOff), false, "\"");
+  savetmp += build_JSON_Payload(F("forceCObelow"), String(forceCObelow), false, "\"");
+  savetmp += build_JSON_Payload(F("histereza"), String(histereza), false, "\"");
+  savetmp += build_JSON_Payload(F("najpierwCO"), String(najpierwCO?"1":"0"), false, "\"");
+  savetmp += build_JSON_Payload(F("forceWater"), String(forceWater?"1":"0"), false, "\"");
+  savetmp += build_JSON_Payload(F("forceCO"), String(forceCO?"1":"0"), false, "\"");
+  return savetmp;
 }
-void SaveConfig_old() {
-  //EEPROM.put(1, CRTrunNumber);
-  // EEPROM.put(1+sizeof(CRTrunNumber), energy1used);
-  // EEPROM.put(1+sizeof(CRTrunNumber)+sizeof(energy1used), energy2used);
+void addusage_local_values_load(String dane, int EpromPosition){
+  String tmpstrval = "\0";
 
-  log_message((char*)F("Saving config...........................prepare"));
-  SaveEnergy();
-  unsigned int temp =0;
-  //firs read content of eeprom
-  EEPROM.get(1,temp);
-  // if (EEPROM.read(CONFIG_START + 0) == CONFIG_VERSION[0] &&
-  //     EEPROM.read(CONFIG_START + 1) == CONFIG_VERSION[1] &&
-  //     EEPROM.read(CONFIG_START + 2) == CONFIG_VERSION[2] &&
-  //     EEPROM.read(CONFIG_START + 3) == CONFIG_VERSION[3] &&
-  //     EEPROM.read(CONFIG_START + 4) == CONFIG_VERSION[4]){
-  // // load (overwrite) the local configuration temp struct
-  //   for (unsigned int i=0; i<sizeof(configuration_type); i++){
-  //     *((char*)&CONFTMP + i) = EEPROM.read(CONFIG_START + i);
-  //   }
-  // }
-  // if (temp != CRTrunNumber ||
-      // strcmp(CONFTMP.ssid, ssid) != 0 ||
-      // strcmp(CONFTMP.pass, pass) != 0 ||
-      // strcmp(CONFTMP.mqtt_server, mqtt_server) != 0 ||
-      // strcmp(CONFTMP.mqtt_user, mqtt_user) != 0 ||
-      // strcmp(CONFTMP.mqtt_password, mqtt_password) != 0 ||
-      // CONFTMP.mqtt_port != mqtt_port ||
-      // CONFTMP.coConstTempCutOff != coConstTempCutOff ||
-      // CONFTMP.forceCObelow != forceCObelow  ||
-      // CONFTMP.histereza != histereza ||
-      // CONFTMP.forceWater != forceWater ||
-      // CONFTMP.forceCO != forceCO) {  //skip save if CRTrunNumber = saved CRTrunNumber to avoid too much memory save and wear eeprom
-    // EEPROM.put(1, CRTrunNumber);
-    //EEPROM.put(1+sizeof(CRTrunNumber), flame_used_power_kwh);
-    log_message((char*)F("Saving config........................... to EEPROM some data changed"));
+  if (dane.indexOf("coConstTempCutOff") > -1)     { tmpstrval = getJsonVal(dane, "coConstTempCutOff"); tmpstrval.replace("\"","");  coConstTempCutOff = (float) tmpstrval.toFloat(); }
+  if (dane.indexOf("forceCObelow") > -1)     { tmpstrval = getJsonVal(dane, "forceCObelow"); tmpstrval.replace("\"","");  forceCObelow = (float) tmpstrval.toFloat(); }
+  if (dane.indexOf("histereza") > -1)     { tmpstrval = getJsonVal(dane, "histereza"); tmpstrval.replace("\"","");  histereza = (float) tmpstrval.toFloat(); }
 
-    // strcpy(CONFIGURATION.version,CONFIG_VERSION);
-    // strcpy(CONFIGURATION.ssid,ssid);
-    // strcpy(CONFIGURATION.pass,pass);
-    // strcpy(CONFIGURATION.mqtt_server,mqtt_server);
-    // strcpy(CONFIGURATION.mqtt_user,mqtt_user);
-    // strcpy(CONFIGURATION.mqtt_password,mqtt_password);
-    // CONFIGURATION.mqtt_port = mqtt_port;
-    // CONFIGURATION.najpierwCO = najpierwCO;
-    // CONFIGURATION.coConstTempCutOff = coConstTempCutOff;
-    // CONFIGURATION.forceCObelow = forceCObelow;
-    // CONFIGURATION.histereza = histereza;
-    // CONFIGURATION.forceWater = forceWater;
-    // CONFIGURATION.forceCO = forceCO;
-    // for (unsigned int i=0; i<sizeof(configuration_type); i++)
-    //   { EEPROM.write(CONFIG_START + i, *((char*)&CONFIGURATION + i)); }
-  //   EEPROM.commit();
-  // }
+
+  if (dane.indexOf("SUPLA_VOLT_TOPIC") >= 0)      { tmpstrval = getJsonVal(dane, "SUPLA_VOLT_TOPIC"); tmpstrval.replace("\"",""); SUPLA_VOLT_TOPIC = tmpstrval; }
+  if (dane.indexOf("SUPLA_FREQ_TOPIC") >= 0)      { tmpstrval = getJsonVal(dane, "SUPLA_FREQ_TOPIC"); tmpstrval.replace("\"",""); SUPLA_FREQ_TOPIC = tmpstrval; }
+  if (dane.indexOf("BOILER_GAZ_CWU_TOPIC") >= 0)      { tmpstrval = getJsonVal(dane, "BOILER_GAZ_CWU_TOPIC"); tmpstrval.replace("\"",""); BOILER_GAZ_CWU_TOPIC = tmpstrval; }
+  if (dane.indexOf("BOILER_GAZ_CWU_JSON") >= 0)      { tmpstrval = getJsonVal(dane, "BOILER_GAZ_CWU_JSON"); tmpstrval.replace("\"",""); BOILER_GAZ_CWU_JSON = tmpstrval; }
+
+  if (dane.indexOf("forceCO") >= 0)        { tmpstrval = getJsonVal(dane, "forceCO"); tmpstrval.replace("\"",""); forceCO = (bool) (tmpstrval == "1"); }
+  if (dane.indexOf("forceWater") >= 0)        { tmpstrval = getJsonVal(dane, "forceWater"); tmpstrval.replace("\"",""); forceWater = (bool) (tmpstrval == "1"); }
+  if (dane.indexOf("najpierwCO") >= 0)        { tmpstrval = getJsonVal(dane, "najpierwCO"); tmpstrval.replace("\"",""); najpierwCO = (bool) (tmpstrval == "1"); }
+
+
+  if (EpromPosition > 0) {
+    EEPROM.get(EpromPosition, energy1used);
+    if (isnan(energy1used) || (energy1used + 1) == 0) energy1used = 0;
+    EpromPosition += sizeof(energy1used);
+    EEPROM.get(EpromPosition, energy2used);
+    EpromPosition += sizeof(energy2used);
+    if (isnan(energy2used) || (energy2used + 1) == 0) energy2used = 0;
+  }
+  if (dane.indexOf("energy1used") >= 0) {
+    double tmpdouble = 0;
+    tmpdouble = getJsonVal(dane, "energy1used").toDouble();
+    if (tmpdouble > energy1used) energy1used = tmpdouble; //if eprom is reset
+  }
+  if (dane.indexOf("energy2used") >= 0) {
+    double tmpdouble = 0;
+    tmpdouble = getJsonVal(dane, "energy2used").toDouble();
+    if (tmpdouble > energy2used) energy2used = tmpdouble; //if eprom is reset
+  }
 }
 
-void SaveEnergy() {
+
+String SaveEnergy(int EpromPosition) {
    // ------------------------ energy config save --------------
-  unsigned int temp = 0;
-  EEPROM.get(1,temp);
-  if (temp != CRTrunNumber ) {EEPROM.put(1, CRTrunNumber);}
-  double dtemp =0;
-  EEPROM.get(1+sizeof(CRTrunNumber),dtemp);
-  if (dtemp != energy1used) {EEPROM.put(1+sizeof(CRTrunNumber), energy1used);}
-  EEPROM.get(1+sizeof(CRTrunNumber)+sizeof(energy1used),dtemp);
-  if (dtemp != energy2used) {EEPROM.put(1+sizeof(CRTrunNumber)+sizeof(energy1used), energy2used);}
+  // unsigned int temp = 0;
+  // EEPROM.get(1,temp);
+  // if (temp != CRTrunNumber ) {EEPROM.put(1, CRTrunNumber);}
+  double dtemp = 0;
+  EEPROM.get(EpromPosition,dtemp);
+  if (dtemp != energy1used) {EEPROM.put(EpromPosition, energy1used);}
+  EpromPosition += sizeof(energy1used);
+  EEPROM.get(EpromPosition,dtemp);
+  if (dtemp != energy2used) {EEPROM.put(EpromPosition, energy2used);}
   EEPROM.commit();
+  String energytmp = "\0";
+  energytmp += build_JSON_Payload(F("energy1used"), String(energy1used), false, "\"");
+  energytmp += build_JSON_Payload(F("energy2used"), String(energy2used), false, "\"");
   log_message((char*)F("saved energy used... only if needed"));
-
+  return energytmp;
 }
 
 //
@@ -1060,14 +1020,6 @@ double getenergy(int adspin) {
 }
 
 
-String addusage_local_values_save(int EpromPosition){
-  SaveEnergy();
-  return "\0";
-}
-void addusage_local_values_load(String dane, int EpromPosition){
-
-}
-
 
 
 
@@ -1078,109 +1030,121 @@ String LocalVarsRemoteCommands(String command, size_t gethelp)
   sprintf(log_chars,"Received Data on WebSerial...: %s", String(command).c_str());
   log_message(log_chars);
   if (gethelp == remoteHelperMenu) {
-    return F(", RESET_FLAMETOTAL, ROOMTEMP0, ROOMTEMP+, ROOMTEMP-, USEDMEDIA, INCT");
+    return F(", RESET_FLAMETOTAL, AUTOFORCECOBELOW, COCUTOFFTEMP, HIST, USEDMEDIA, ForceCO, ForceWater");
   } else
   if (gethelp == remoteHelperMenuCommand)
   {
-    if (command.indexOf("ROOMTEMP0") >=0) {
-      log_message((char*)F("  ROOMTEMP0   -Przelacza temperature z pokoju na automat,"), logCommandResponse);
+    if (command.indexOf("AUTOFORCECOBELOW") ==0) {
+      log_message((char*)F("  AUTOFORCECOBELOW xx  -Zmienia wartość xx 'wymusza pompe CO poniżej temperatury średniej zewnetrznej',,"), logCommandResponse);
     } else
-    if (command.indexOf("ROOMTEMP+") >=0) {
-      log_message((char*)F(" ROOMTEMP+  -Zwiększa wartość temperatury z pokoju o 0,5 stopnia,"), logCommandResponse);
+    if (command.indexOf("COCUTOFFTEMP") >=0) {
+      log_message((char*)F(" COCUTOFFTEMP xx  -Zmienia wartość xx 'Temperatura graniczna na wymienniku oznacza ze piec sie grzeje',"), logCommandResponse);
+    } else
+    if (command.indexOf("HIST") >=0) {
+      log_message((char*)F(" HIST xx          -Zmienia wartość xx histerezy progu grzania,"), logCommandResponse);
+    } else
+    if (command.indexOf("FORCECO") ==0) {
+      log_message((char*)F(" ForceCO 0/1      -1(ON) -Wymusza grzanie CO 0(OFF) -deaktywuje,"), logCommandResponse);
+    } else
+    if (command.indexOf("FORCEWater") >=0) {
+      log_message((char*)F(" ForceWater 0/1   -1(ON) -Wymusza grzanie Wody 0(OFF) -deaktywuje,"), logCommandResponse);
     } else
     return F("OK");
   } else
+
   if (gethelp == remoteHelperCommand)
   {
-    if (command == "USEDMEDIA")
-    {
+    if (command == "USEDMEDIA") {
+      String a = F("Energy 1 used WO: ");
+      a += String(energy1used,4);
+      a += F("kWh, Energy 2 used CO: ");
+      a += String(energy2used,4);
+      a += F("kWh, ADS initialised: ");
+      a += String(isadslinitialised ? "Tak" : "Nie");
       //sprintf(log_chars, "Used Media: %s: %lfWh,    %llu\n   w tym woda: %lfWh,     %llu\n   w tym CO:   %lfWh,      %llu\n", Flame_total, 900090000*1000, 909000000, 900090000*1000, 900090000, 900090000*1000, 900090000);
       // ptrS += String(Flame_total) + ": " + String() + "Wh,    " + String(  ) + "\n";      //uptimedana((flame_time_total), true) + "\n";
       // ptrS += "" + String() + "" + String(   ) + "\n"; //uptimedana((flame_time_waterTotal), true) + "\n");
       // ptrS += "" + String() + "" + String() + "\n";         //uptimedana((flame_time_CHTotal), true)+"\n");
-      log_message((char*)log_chars, logCommandResponse);
+      log_message((char*)a.c_str(), logCommandResponse);
+      return F("OK");
     } else
-    if (command == "ON")
-    {
+    if (command == "ON")  {
       //  digitalWrite(LED, HIGH);
+      return F("OK");
     } else
-    if (command == "OFF")
-    {
+    if (command == "OFF") {
       //  digitalWrite(LED, LOW);
+      return F("OK");
     } else
-    if (command.indexOf("FORCECOBELOW") !=- 1)
-    {
-      String part = command.substring(command.indexOf(" "));
-      part.trim();
-      sprintf(log_chars, " ForceCOBelow: %s ", String(forceCObelow).c_str());
-      log_message(log_chars);
-      if (command.indexOf(" ")!=-1) {
-        if (PayloadtoValidFloatCheck(part)) {forceCObelow = PayloadtoValidFloat(part,true,4,15);}
-        sprintf(log_chars, "      -> ZMIENIONO NA: %s     Payload: %s", String(forceCObelow).c_str(), String(command).c_str());
-        log_message(log_chars);
-      } else { }
-    } else
-    if (command.indexOf("COCUTOFFTEMP") !=- 1)
-    {
+    if (command.indexOf("COCUTOFFTEMP") != -1) {
       String part = command.substring(command.indexOf(" "));
       part.trim();
       sprintf(log_chars, " COCUTOFFTEMP: %s", String(coConstTempCutOff).c_str());
-      log_message(log_chars);
-      if (command.indexOf(" ")!=-1) {
+      log_message(log_chars, logCommandResponse);
+      if (command.indexOf(" ")>=0) {
         if (PayloadtoValidFloatCheck(part)) {coConstTempCutOff = PayloadtoValidFloat(part,true,20,40);}
         sprintf(log_chars, "    -> ZMIENIONO NA: %s,   Payload: %s", String(coConstTempCutOff).c_str(), String(command).c_str());
-        log_message(log_chars);
-      } else { }
+        log_message(log_chars, logCommandResponse);
+      }
+      return F("OK");
     } else
-    if (command.indexOf("HIST") !=- 1)
-    {
+    if (command.indexOf("HIST") != -1) {
       String part = command.substring(command.indexOf(" "));
       part.trim();
       sprintf(log_chars, " histereza: %s", String(histereza).c_str());
-      log_message(log_chars);
-      if (command.indexOf(" ")!=-1) {
+      log_message(log_chars, logCommandResponse);
+      if (command.indexOf(" ")>=0) {
         if (PayloadtoValidFloatCheck(part)) {histereza = PayloadtoValidFloat(part,true,-5,5);}
         sprintf(log_chars, "  -> ZMIENIONO NA: %s,   Payload: %s", String(histereza).c_str(), String(command).c_str());
-        log_message(log_chars);
-      } else { }
+        log_message(log_chars, logCommandResponse);
+      }
+      return F("OK");
     } else
-    if (command.indexOf("FORCECO") !=- 1)
-    {
+    if (command.indexOf("FORCECO") ==0) {
       String part = command.substring(command.indexOf(" "));
       part.trim();
       sprintf(log_chars, " ForceCO: %s", String(forceCO?"ON":"OFF").c_str());
-      log_message(log_chars);
+      log_message(log_chars, logCommandResponse);
       if (command.indexOf(" ")!=-1) {
         if (PayloadStatus(part,true)) {forceCO = true;} else if (PayloadStatus(part,false)) {forceCO = false;}
         sprintf(log_chars, " -> ZMIENIONO NA: %s, Payload: %s", String(forceCO?"ON":"OFF").c_str(), String(command).c_str());
-        log_message(log_chars);
-      } else { }
+        log_message(log_chars, logCommandResponse);
+      }
+      return F("OK");
     } else
-    if (command.indexOf("FORCEWATER") !=- 1)
-    {
+    if (command.indexOf("AUTOFORCECOBELOW") == 0) {
+      String part = command.substring(command.indexOf(" "));
+      part.trim();
+      sprintf(log_chars, " AUTOFORCECOBELOW: %s ", String(forceCObelow).c_str());
+      log_message(log_chars, logCommandResponse);
+      if (command.indexOf(" ")>=0) {
+        if (PayloadtoValidFloatCheck(part)) {forceCObelow = PayloadtoValidFloat(part,true,-4,15);}
+        sprintf(log_chars, "      -> ZMIENIONO NA: %s     Payload: %s", String(forceCObelow).c_str(), String(command).c_str());
+        log_message(log_chars, logCommandResponse);
+      }
+      return F("OK");
+    } else
+    if (command.indexOf("FORCEWATER") ==0)  {
       String part = command.substring(command.indexOf(" "));
       part.trim();
       sprintf(log_chars, " ForceWater: %s", String(forceWater?"ON":"OFF").c_str());
-      log_message(log_chars);
+      log_message(log_chars, logCommandResponse);
       if (command.indexOf(" ")!=-1) {
         if (PayloadStatus(part,true)) {forceWater = true;} else if (PayloadStatus(part,false)) {forceWater = false;}
         sprintf(log_chars, " -> ZMIENIONO NA: %s, Payload: %s", String(forceWater?"ON":"OFF").c_str(), String(command).c_str());
-        log_message(log_chars);
-      } else { }
+        log_message(log_chars, logCommandResponse);
+      }
+      return F("OK");
     } else
-    if (command == "HELP")
+    if (command == "HELP1")
     {
       log_message((char*)F("KOMENDY:\n \
-      FORCECOBELOW xx  -Zmienia wartość xx 'wymusza pompe CO poniżej temperatury średniej zewnetrznej', \n \
-      COCUTOFFTEMP xx  -Zmienia wartość xx 'Temperatura graniczna na wymienniku oznacza ze piec sie grzeje',\n \
-      HIST xx          -Zmienia wartość xx histerezy progu grzania,\n \
-      ForceCO 0/1      -1(ON) -Wymusza grzanie CO 0(OFF) -deaktywuje,\n \
-      ForceWater 0/1   -1(ON) -Wymusza grzanie Wody 0(OFF) -deaktywuje,\n \
       LOG2MQTT         -1(ON) wysyla log do MQTT 0 wylacza,\n \
       RESTART          -Uruchamia ponownie układ,\n \
       RECONNECT        -Dokonuje ponownej próby połączenia z bazami,\n \
       SAVE             -Wymusza zapis konfiguracji,\n \
       RESET_CONFIG     -UWAGA!!!! Resetuje konfigurację do wartości domyślnych"));
+      return F("OK");
     }
   }
   return "\0";

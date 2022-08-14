@@ -44,7 +44,7 @@ SevenSegmentTM1637 display(disCLK, disDATA);
 
 
 
-void SaveEnergy();        //zapisz do spiff stan zuzycia energii
+String SaveEnergy(int EpromPosition);        //zapisz do spiff stan zuzycia energii
 void gas_leak_check();    //sprawdz czujnik gazu
 void display_temp_rotation();   //obsluga rotacji wyswietlacza
 void starthttpserver();           //obsluga serwerow www

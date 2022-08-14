@@ -14,7 +14,7 @@
 #define ASS_coTherm 6         //hot water temp set
 #define ASS_coThermStr "coTherm"
 #define ASS_forceCObelow 7        // outside temp setpoint to cutoff heating co. CO heating is disabled if outside temp (temp_NEWS) is above this value
-#define ASS_forceCObelowStr "sliderValue3"
+#define ASS_forceCObelowStr "sliderValue1"
 #define ASS_waterTherm 8
 #define ASS_waterThermStr "waterTherm"
 #define ASS_NTherm 9
@@ -26,7 +26,7 @@
 #define ASS_STherm 12      //hotWater heat active/not
 #define ASS_SThermStr "STherm"
 #define ASS_coConstTempCutOff 13
-#define ASS_coConstTempCutOffStr "sliderValue4"
+#define ASS_coConstTempCutOffStr "sliderValue2"
 #define ASS_dcoval 14
 #define ASS_dcovalStr "dcoval"
 #define ASS_forceCO 15
@@ -53,9 +53,17 @@
 #define ASS_pump2coStr "pump2co"
 #define ASS_waterThermBG 26         //hot water temp set
 #define ASS_waterThermBGStr "waterTherm_boilerGAZ"
+#define ASS_waterThermBGtime 27         //hot water temp set
+#define ASS_waterThermBGtimeStr "waterTherm_boilerGAZ_time"
+#define ASS_UsedMedia 28         //hot water temp set
+#define ASS_UsedMediaStr "UsedMedia"
 
 
-#define ASS_Num (26 + 1)              //number of ASS definitions
+
+
+
+
+#define ASS_Num (28 + 1)              //number of ASS definitions
 #define numDecimalsWWW 1
 #define cutoff_histereza 0.7        //histereza cutoff and roomtemp/roomtempset
 #define dhwTargetStart 51           // domyslna temperatura docelowa wody uzytkowej

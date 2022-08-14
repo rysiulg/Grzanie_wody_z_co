@@ -25,18 +25,15 @@
     <h2>Uptime: <span id="uptimedana">%uptimedana%</span></h2>
 
     <div id="Home" class="tabcontent">
-
-
         <div class="card-grid">
 
-            <div class="card" id="ALLNEWS">
+            <div class="card" id="All_News_Values">
                 <div class="tooltip">
                     <span class="tooltiptext">Temperatura na zewnątrz</span>
                     <p class="card-title">NEWS Temp</p>
                     <i class="fas fa-thermometer-half"></i>
                     <div class="temperatureVal" id="temp_NEWS">%temp_NEWS%</div>
                     <sup class="unitsmain">&deg;C</sup>
-
                 </div>
                 <div class="tooltip">
                     <span class="tooltiptext">Czas ostatniej aktualizacji temperatury Średniej na zewnątrz</span>
@@ -74,14 +71,12 @@
                             <sup class="unitsmain">&deg;C</sup>
                         </div>
                         <hr>
-                        <div class="cardPart cardPart1">
-                            <div class="tooltip">
-                                <span class="tooltiptext">Temperatura wody boilera -pieca. Gdy aktywne podgrzewanie wody temp grzania wody, Gdy aktywne CO -temperatura grzania CO.</span>
-                                <p class="card-title" id="WThermcard">Zachód</p>
-                                <i class="fas fa-thermometer-half"></i>
-                                <div class="temperatureVal" id="WTherm">%WTherm%</div>
-                                <sup class="unitsmain">&deg;C</sup>
-                            </div>
+                        <div class="tooltip">
+                            <span class="tooltiptext">Temperatura wody boilera -pieca. Gdy aktywne podgrzewanie wody temp grzania wody, Gdy aktywne CO -temperatura grzania CO.</span>
+                            <p class="card-title" id="WThermcard">Zachód</p>
+                            <i class="fas fa-thermometer-half"></i>
+                            <div class="temperatureVal" id="WTherm">%WTherm%</div>
+                            <sup class="unitsmain">&deg;C</sup>
                         </div>
                     </div>
                 </div>
@@ -91,118 +86,134 @@
 
 
 
-            <div class="card">
-                <p class="card-title"  id="switchCard">Tryb Pracy</p>
+
+
+            <div class="card" id="RoomSpecific">
                 <div class="twoCard">
                     <div class="cardPart cardPart1">
-                        Ogrzewanie CO
                         <div class="tooltip">
-                            <span class="tooltiptext">Stan ogrzewania Centralnego grzanie po przekroczeniu temperatury zewnętrznej 'cutoff'"</span>
-                            <div class="RoundSwitchCheckbox">
-                                <input type="checkbox" class="boilerwww" id="boilerwww" Name="boilerwww" value="%boilerwww%" onchange="updateSliderPWM(this)"/>
-                                <label for="boilerwww"></label>
-                            </div>
+                            <p class="card-title">Ciśnienie kotłownia</p>
+                            <span class="tooltiptext">Ciśnienie w kotłowni</span>
+                            <i class="fas fa-tire-pressure-warning"></i>
+                            <div class="temperatureVal" id="dbmpressval">%dbmpressval%</div>
+                            <sup class="unitsmain">hPa</sup>
                         </div>
                         <hr>
-                        Tryb AUTO
-                        <div id="BOILMODMODE">
-                            <div class="tooltip">
-                                <span class="tooltiptext">Tryb pracy ręczny (gdy wyłączony przycisk lub AUTOmatyczny gdy włączony. W obu trybach grzanie po przekroczeniu temperatury zewnętrznej 'cutoff'. Tryb ręczny bazuje na Temp. grzania -wartość na rurze CO. Tryb AUTO bazuje na krzywej i dopasowuje do Średniej z pomieszczeń: Odczyt/Docelowa</span>
-                                <div class="RoundSwitchCheckbox">
-                                    <input type="checkbox" class="boilermodewww" id="boilermodewww" Name="boilermodewww"  value="%boilermodewww%" onchange="updateSliderPWM(this)"/>
-                                    <label for="boilermodewww"></label>
-                                </div>
-                            </div>
+                        <div class="tooltip">
+                            <p class="card-title">Temperatura kotłowni</p>
+                            <span class="tooltiptext">Temperatura kotłownia</span>
+                            <i class="fas fa-thermometer-half"></i>
+                            <div class="temperatureVal" id="bmTemp">%bmTemp%</div>
+                            <sup class="unitsmain">&deg;C</sup>
                         </div>
-                    </div>
+                        <hr>
+                        <div class="tooltip">
+                            <p class="card-title">Czujnik CO</p>
+                            <span class="tooltiptext">Czujnik czadu</span>
+                            <i class="fas fa-tint"></i>
+                            <div class="temperatureVal" id="dcoval">%dcoval%</div>
+                            <sup class="unitsmain">ppm</sup>
+                        </div>
+                        <hr>
+                        <div class="tooltip">
+                            <p class="card-title">Pump1 Woda</p>
+                            <span class="tooltiptext">Pompa Wody</span>
+                            <i class="fas fa-fan"></i>
+                            <div class="temperatureVal" id="pump1wo">%pump1wo%</div>
+                            <sup class="unitsmain"> </sup>
+                        </div>
 
+                    </div>
                     <div class="cardPart cardPart2">
-                        Podgrzewanie Wody
                         <div class="tooltip">
-                            <span class="tooltiptext">Stan pracy podgrzewania Ciepłej Wodu CWU oraz tryb Eco -oznacza tryb pracy kondensacyjny/niskotemperaturowy ogrzewania -ogranicza temp CO do max 40st.</span>
-                            <div class="RoundSwitchCheckbox">
-                                <input type="checkbox" class="boilerhwwww" id="boilerhwwww" Name="boilerhwwww" value="%boilerhwwww%" onchange="updateSliderPWM(this)"/>
-                                <label for="boilerhwwww"></label>
-                            </div>
+                            <p class="card-title">Wysokość bm_high</p>
+                            <span class="tooltiptext">Wysokość</span>
+                            <i class="fas fa-water"></i>
+                            <div class="temperatureVal" id="bm_high">%bm_high%</div>
+                            <sup class="unitsmain">mnpm</sup>
                         </div>
                         <hr>
-                        Tryb ECO (kondensacyjny)
-                        <span class="ECOMODMODE">
-                            <span class="tooltiptext">
-                                <div class="RoundSwitchCheckbox">
-                                    <input type="checkbox" class="ecoMode" id="ecoMode" Name="ecoMode"  value="%ecoMode%" onchange="updateSliderPWM(this)"/>
-                                    <label for="ecoMode"></label>
-                                </div>
-                            </span>
-                        </span>
+                        <div class="tooltip">
+                            <p class="card-title">Wysokość real bm_high_real</p>
+                            <span class="tooltiptext">Wysokość rzeczywista</span>
+                            <i class="fas fa-water"></i>
+                            <div class="temperatureVal" id="bm_high_real">%bm_high_real%</div>
+                            <sup class="unitsmain">mnpm</sup>
+                        </div>
+                        <hr>
+                        <div class="tooltip">
+                            <p class="card-title">Pump2 CO</p>
+                            <span class="tooltiptext">Pompa CO</span>
+                            <i class="fas fa-fan"></i>
+                            <div class="temperatureVal" id="pump2co">%pump2co%</div>
+                            <sup class="unitsmain"> </sup>
+                        </div>
                     </div>
                 </div>
             </div>
-
-
 
             <div class="card" id="HotWater_card">
                 <div class="twoCard">
-                <div class="cardPart cardPart1">
-                    <div class="tooltip">
-                        <p class="card-title" id="HotWater_title">Ciepła Woda CWU_waterTherm_boilerGAZ</p>
-                        <span class="tooltiptext">Temperatura w zbiorniku ciepłej wody użytkowej</span>
-                        <i class="fas fa-thermometer-half"></i>
-                        <div class="temperatureVal" id="waterTherm_boilerGAZ">%waterTherm_boilerGAZ%</div>
-                        <sup class="unitsmain">&deg;C</sup>
+                    <div class="cardPart cardPart1">
+                        <div class="tooltip">
+                            <p class="card-title" id="HotWater_title_fromGAZ">Ciepła Woda CWU_waterTherm_boilerGAZ</p>
+                            <span class="tooltiptext">Temperatura w zbiorniku ciepłej wody użytkowej</span>
+                            <i class="fas fa-thermometer-half"></i>
+                            <div class="temperatureVal" id="waterTherm_boilerGAZ">%waterTherm_boilerGAZ%</div>
+                            <sup class="unitsmain">&deg;C</sup>
+                            <br>
+                            <div class="units_update" style="margin-top: 20px;">Aktualizacja: </div>
+                            <div class="units_update" id="waterTherm_boilerGAZ_time">%waterTherm_boilerGAZ_time%</div>
+                            <div class="units_update"> temu</div>
+                        </div>
+                        <hr>
+                        <div class="tooltip">
+                            <p class="card-title" id="HotWater_title">!Ciepła Woda CWU!</p>
+                            <span class="tooltiptext">Temperatura w zbiorniku ciepłej wody użytkowej</span>
+                            <i class="fas fa-thermometer-half"></i>
+                            <div class="temperatureVal" id="waterTherm">%waterTherm%</div>
+                            <sup class="unitsmain">&deg;C</sup>
+                        </div>
                     </div>
-                    <hr>
-                    <div class="tooltip">
-                        <p class="card-title" id="HotWater_title">!Ciepła Woda CWU!</p>
-                        <span class="tooltiptext">Temperatura w zbiorniku ciepłej wody użytkowej</span>
-                        <i class="fas fa-thermometer-half"></i>
-                        <div class="temperatureVal" id="waterTherm">%waterTherm%</div>
-                        <sup class="unitsmain">&deg;C</sup>
+                    <div class="cardPart cardPart2">
+                        <div class="tooltip">
+                            <span class="tooltiptext">Stan pompy ogrzewania Centralnego grzania 'prgstatusrelay1WO'"</span>
+                            <i class="fas ppmicon"></i>
+                            <div class="RoundSwitchCheckbox">
+                                <input type="checkbox" class="prgstatusrelay1WO" id="prgstatusrelay1WO" Name="prgstatusrelay1WO" value="%prgstatusrelay1WO%" onchange="updateSliderPWM(this)"/>
+                                <label for="prgstatusrelay1WO"></label>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="tooltip">
+                            <span class="tooltiptext">Force forceWater Stan pompy ogrzewania Centralnego grzania 'forceWater'"</span>
+                            <i class="fas ppmicon"></i>
+                            <div class="RoundSwitchCheckbox">
+                                <input type="checkbox" class="forceWater" id="forceWater" Name="forceWater" value="%forceWater%" onchange="updateSliderPWM(this)"/>
+                                <label for="forceWater"></label>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="tooltip">
+                            <p class="card-title" id="HotWater_title">slider5</p>
+                            <span class="tooltiptext">Histereza -zwiększenie zakresu poziomu załączenia ogrzewania CO. Pozwala na spadek ciepłej wody o tę podaną wartość powodując późniejsze włączenie grzania CO.</span>
+                            <div class="rangewrap">
+                                <span class="rangevalue" id="RangeV5">%sliderValue5%</span>
+                                <input type="range" class="range" id="slider5" onchange="updateSliderPWM(this)" min=%histlo% max=%histhi% step="0.5" value="%sliderValue5%">
+                            </div>
+                        </div>
+                        <hr>
+                        <p class="state">Set: <span id="sliderValue5">%sliderValue5%</span> (<span id="calcCWU">%calcCWU%</span>) <sup class="units">&deg;C</sup></p>
                     </div>
                 </div>
-                <div class="cardPart cardPart2">
-                    <div class="tooltip">
-                        <span class="tooltiptext">Stan pompy ogrzewania Centralnego grzania 'cutoff'"</span>
-                        <i class="fas ppmicon"></i>
-                        <div class="RoundSwitchCheckbox">
-                            <input type="checkbox" class="prgstatusrelay1WOStr" id="prgstatusrelay1WOStr" Name="prgstatusrelay1WOStr" value="%prgstatusrelay1WOStr%" onchange="updateSliderPWM(this)"/>
-                            <label for="prgstatusrelay1WOStr"></label>
-                        </div>
-                    </div>
-                    <hr>
-                    <div class="tooltip">
-                        <span class="tooltiptext">Force forceWater Stan pompy ogrzewania Centralnego grzania 'cutoff'"</span>
-                        <i class="fas ppmicon"></i>
-                        <div class="RoundSwitchCheckbox">
-                            <input type="checkbox" class="forceWater" id="forceWater" Name="forceWater" value="%forceWater%" onchange="updateSliderPWM(this)"/>
-                            <label for="forceWater"></label>
-                        </div>
-                    </div>
-                    <hr>
-                    <div class="tooltip">
-                        <p class="card-title" id="HotWater_title">ASS_forceCObelowStr</p>
-                        <span class="tooltiptext">Histereza -zwiększenie zakresu poziomu załączenia ogrzewania CO. Pozwala na spadek ciepłej wody o tę podaną wartość powodując późniejsze włączenie grzania CO.</span>
-                        <div class="rangewrap">
-                            <span class="rangevalue" id="RangeV5">%sliderValue5%</span>
-                            <input type="range" class="range" id="slider5" onchange="updateSliderPWM(this)" min=%histlo% max=%histhi% step="0.5" value="%sliderValue5%">
-                        </div>
-                    </div>
-                    <hr><p class="state">Set: <span id="sliderValue5">%sliderValue5%</span> (<span id="calcCWU">%calcCWU%</span>) <sup class="units">&deg;C</sup></p>
+                <p class="state">Temperatura graniczna na wymienniku oznacza ze piec sie grzeje:</p>
+                <div class="rangewrap">
+                    <span class="rangevalue" id="RangeV2">%sliderValue2%</span>
+                    <input type="range" class="range" id="slider2" onchange="updateSliderPWM(this)" min=20 max=40 step="0.5" value="%sliderValue2%">
                 </div>
+                <hr>
+                <p class="state">Set: <span id="sliderValue2">%sliderValue2%</span> <sup class="units">&deg;C</sup></p>
             </div>
-            <div class="rangewrap">
-                <span class="rangevalue" id="RangeV2">%sliderValue2%</span>
-                <input type="range" class="range" id="slider2" onchange="updateSliderPWM(this)" min=%oplo% max=%ophi% step="0.5" value="%sliderValue2%">
-            </div>
-            <hr><p class="state">Set: <span id="sliderValue2">%sliderValue2%</span> <sup class="units">&deg;C</sup></p>
-            </div>
-
-
-
-
-
-
-
 
 
             <div class="card" id="BoilerCO_card">
@@ -218,11 +229,27 @@
                     </div>
                     <div class="cardPart cardPart2">
                         <div class="tooltip">
-                            <span class="tooltiptext">Stan pompy ogrzewania Centralnego grzania 'cutoff'"</span>
+                            <span class="tooltiptext">Stan pompy ogrzewania Centralnego grzania 'prgstatusrelay2CO'"</span>
                             <i class="fas ppmicon"></i>
                             <div class="RoundSwitchCheckbox">
-                                <input type="checkbox" class="boilerwww" id="boilerwww" Name="boilerwww" value="%boilerwww%" onchange="updateSliderPWM(this)"/>
-                                <label for="boilerwww"></label>
+                                <input type="checkbox" class="prgstatusrelay2CO" id="prgstatusrelay2CO" Name="prgstatusrelay2CO" value="%prgstatusrelay2CO%" onchange="updateSliderPWM(this)"/>
+                                <label for="prgstatusrelay2CO"></label>
+                            </div>
+                        </div>
+                        <div class="tooltip">
+                            <span class="tooltiptext">Stan pompy ogrzewania Centralnego grzania 'forceCO'"</span>
+                            <i class="fas ppmicon"></i>
+                            <div class="RoundSwitchCheckbox">
+                                <input type="checkbox" class="forceCO" id="forceCO" Name="forceCO" value="%forceCO%" onchange="updateSliderPWM(this)"/>
+                                <label for="forceCO"></label>
+                            </div>
+                        </div>
+                        <div class="tooltip">
+                            <span class="tooltiptext">Stan pompy ogrzewania Centralnego grzania 'najpierwCO'"</span>
+                            <i class="fas ppmicon"></i>
+                            <div class="RoundSwitchCheckbox">
+                                <input type="checkbox" class="najpierwCO" id="najpierwCO" Name="najpierwCO" value="%najpierwCO%" onchange="updateSliderPWM(this)"/>
+                                <label for="najpierwCO"></label>
                             </div>
                         </div>
                         <hr>
@@ -237,127 +264,35 @@
                         <hr><p class="state">Set: <span id="sliderValue3">%sliderValue3%</span> (<span id="calcCO">%calcCO%</span>) <sup class="units">&deg;C</sup></p>
                     </div>
                 </div>
+                <p class="state">wymusza pompe CO poniżej temperatury średniej zewnetrznej:</p>
                 <div class="rangewrap">
                     <span class="rangevalue" id="RangeV1">%sliderValue1%</span>
-                    <input type="range" class="range" id="slider1" onchange="updateSliderPWM(this)" min=%opcolo% max=%opcohi% step="0.5" value=%sliderValue1%>
+                    <input type="range" class="range" id="slider1" onchange="updateSliderPWM(this)" min=-4 max=15 step="0.5" value=%sliderValue1%>
                 </div>
                 <hr><p class="state">Set: <span id="sliderValue1">%sliderValue1%</span> <sup class="units">&deg;C</sup></p>
             </div>
 
 
 
-            <div class="card" id="status_Error">
-                <p class="card-title" id="status_Flame">Statusy</p>
-                <p class="Statusy" id="Statusy">%Statusy%</p>
-            </div>
 
 
-            <div class="card">
-                <div class="twoCard">
-                <div class="cardPart cardPart1">
-                    <div class="tooltip">
-                        <p class="card-title">dbmpressval</p>
-                        <span class="tooltiptext">Średnia Temperatura Pomieszczeń oraz Maksymalna Docelowa Ustawiona temperatura w Pomieszczeniach -ustawienie poglądowe</span>
-                        <i class="fas fa-thermometer-half"></i>
-                        <div class="temperatureVal" id="dbmpressval">%dbmpressval%</div>
-                        <sup class="unitsmain">hPa</sup>
-                    </div>
-                    <div class="tooltip">
-                        <p class="card-title">BMTEMP</p>
-                        <span class="tooltiptext">Średnia Temperatura Pomieszczeń oraz Maksymalna Docelowa Ustawiona temperatura w Pomieszczeniach -ustawienie poglądowe</span>
-                        <i class="fas fa-thermometer-half"></i>
-                        <div class="temperatureVal" id="bmTemp">%bmTemp%</div>
-                        <sup class="unitsmain">&deg;C</sup>
-                    </div>
-                    <div class="tooltip">
-                        <p class="card-title">dcoval</p>
-                        <span class="tooltiptext">Średnia Temperatura Pomieszczeń oraz Maksymalna Docelowa Ustawiona temperatura w Pomieszczeniach -ustawienie poglądowe</span>
-                        <i class="fas fa-tint"></i>
-                        <div class="temperatureVal" id="dcoval">%dcoval%</div>
-                        <sup class="unitsmain">ppm</sup>
-                    </div>
-                    <div class="tooltip">
-                        <p class="card-title">pump1wo</p>
-                        <span class="tooltiptext">Średnia Temperatura Pomieszczeń oraz Maksymalna Docelowa Ustawiona temperatura w Pomieszczeniach -ustawienie poglądowe</span>
-                        <i class="fas fa-thermometer-half"></i>
-                        <div class="temperatureVal" id="pump1wo">%pump1wo%</div>
-                        <sup class="unitsmain">&deg;C</sup>
-                    </div>
-                    <div class="tooltip">
-                        <p class="card-title">pump2co</p>
-                        <span class="tooltiptext">Średnia Temperatura Pomieszczeń oraz Maksymalna Docelowa Ustawiona temperatura w Pomieszczeniach -ustawienie poglądowe</span>
-                        <i class="fas fa-thermometer-half"></i>
-                        <div class="temperatureVal" id="pump2co">%pump2co%</div>
-                        <sup class="unitsmain">&deg;C</sup>
-                    </div>
-
-                <hr><p class="state">Set: <span id="sliderValue4">%sliderValue4%</span> <sup class="units">&deg;C</sup></p>
-                </div>
-                <div class="cardPart cardPart2">
-                    <div class="tooltip">
-                        <p class="card-title">ASS_bm_highStr</p>
-                        <span class="tooltiptext">Średnia Temperatura Pomieszczeń oraz Maksymalna Docelowa Ustawiona temperatura w Pomieszczeniach -ustawienie poglądowe</span>
-                        <i class="fas fa-thermometer-half"></i>
-                        <div class="temperatureVal" id="bm_highStr">%bm_highStr%</div>
-                        <sup class="unitsmain">&deg;C</sup>
-                    </div>
-                    <div class="tooltip">
-                        <p class="card-title">bm_high_real</p>
-                        <span class="tooltiptext">Średnia Temperatura Pomieszczeń oraz Maksymalna Docelowa Ustawiona temperatura w Pomieszczeniach -ustawienie poglądowe</span>
-                        <i class="fas fa-water"></i>
-                        <div class="temperatureVal" id="bm_high_real">%bm_high_real%</div>
-                        <sup class="unitsmain">&deg;C</sup>
-                    </div>
-                    <div class="tooltip">
-                        <p class="card-title">Temperatura Powrotu</p>
-                        <span class="tooltiptext">Wartość temperatury powrotu cieczy do boilera -zarówno CO i CWU zależnie co jest aktualnie aktywne</span>
-                        <i class="fas fa-thermometer-half"></i>
-                        <div class="temperatureVal" id="retTemp">%retTemp%</div>
-                        <sup class="unitsmain">&deg;C</sup>
-                    </div>
-                </div>
-            </div>
-            </div>
-
-
-
-
-
-            <div class="card">
-                <div class="twoCard">
-                <div class="cardPart cardPart1">
-                <div class="tooltip">
-                    <p class="card-title">Średnia z Pomieszczeń</p>
-                    <span class="tooltiptext">Średnia Temperatura Pomieszczeń oraz Maksymalna Docelowa Ustawiona temperatura w Pomieszczeniach -ustawienie poglądowe</span>
-                    <i class="fas fa-thermometer-half"></i>
-                    <div class="temperatureVal" id="roomtemp">%roomtemp%</div>
-                    <sup class="unitsmain">&deg;C</sup>
-                </div>
-                <hr><p class="state">Set: <span id="sliderValue4">%sliderValue4%</span> <sup class="units">&deg;C</sup></p>
-                </div>
-                <div class="cardPart cardPart2">
-                    <div class="tooltip">
-                        <p class="card-title">Temperatura Powrotu</p>
-                        <span class="tooltiptext">Wartość temperatury powrotu cieczy do boilera -zarówno CO i CWU zależnie co jest aktualnie aktywne</span>
-                        <i class="fas fa-thermometer-half"></i>
-                        <div class="temperatureVal" id="retTemp">%retTemp%</div>
-                        <sup class="unitsmain">&deg;C</sup>
-                    </div>
-                </div>
-            </div>
-            </div>
-
-
-
-
-
-            <div class="card">
+            <div class="card" id="Statistics">
                 <div class="tooltip">
                     <span class="tooltiptext">Statystyki</span>
                     <p class="card-title"><i class="fas fa-info-circle"></i>Statystyki</p>
                 </div>
                 <div class="Statusy" id="UsedMedia">%UsedMedia%</div>
             </div>
+
+
+
+
+
+
+
+
+
+
 
             <div class="card">
                 <div class="tooltip">
@@ -367,7 +302,12 @@
                 <div class="StatusBlackNormalSmall" id="MemStats">%MemStats%</div>
             </div>
 
+
+            <div class="card" id="status_Error">
+                <p class="card-title" id="status_Flame">Statusy</p>
+                <p class="Statusy" id="Statusy">%Statusy%</p>
             </div>
+
         </div>
     </div> <!-- end of home content -->
 
@@ -487,37 +427,33 @@
                 <label for="NEWStemp_json" class="formbuilder-text-label">MQTT json attribute for NEWS<span class="tooltip" tooltip="MQTT Atrybut json dla temperatury zewnętrznej NEWS (średnia północ,południe,zachód, wschód)">:</span></label>
                 <input type="text" placeholder="%NEWStemp_json%" class="form-control" name="NEWStemp_json" access="false" value="%NEWStemp_json%" maxlength="64" id="NEWStemp_json" title="MQTT Atrybut json dla temperatury zewnętrznej NEWS (średnia północ,południe,zachód, wschód)">
             </div>
+
+
             <div class="">
-                <p class="form_delimiters" access="false" id="control-8029990">Kotłownia -drugi piec statusy:</p>
+                <p class="form_delimiters" access="false" id="control-8029990">Energia:</p>
             </div>
-            <div class="formbuilder-text form-group field-COPUMP_GET_TOPIC">
-                <label for="COPUMP_GET_TOPIC" class="formbuilder-text-label">MQTT Topic dla statusu Pomp CO i Wody pieca węglowego<span class="tooltip" tooltip="MQTT Topic dla sprawdzenia czy pompy wody/CO drugiego pieca pracują -gdy tak nie włącza się CO grzanie">:</span></label>
-                <input type="text" placeholder="%COPUMP_GET_TOPIC%" class="form-control" name="COPUMP_GET_TOPIC" access="false" value="%COPUMP_GET_TOPIC%" maxlength="64" id="COPUMP_GET_TOPIC" title="MQTT Topic dla sprawdzenia czy pompy wody/CO drugiego pieca pracują -gdy tak nie włącza się CO grzanie">
+            <div class="formbuilder-text form-group field-SUPLA_VOLT_TOPIC">
+                <label for="SUPLA_VOLT_TOPIC" class="formbuilder-text-label">MQTT Topic dla pobrania napięcia w sieci energetycznej w tej samej fazie co pompy<span class="tooltip" tooltip="MQTT Topic dla pobrania napięcia w sieci energetycznej w tej samej fazie co pompy">:</span></label>
+                <input type="text" placeholder="%SUPLA_VOLT_TOPIC%" class="form-control" name="SUPLA_VOLT_TOPIC" access="false" value="%SUPLA_VOLT_TOPIC%" maxlength="64" id="SUPLA_VOLT_TOPIC" title="MQTT Topic dla pobrania napięcia w sieci energetycznej w tej samej fazie co pompy">
             </div>
-            <div class="formbuilder-text form-group field-COPumpStatus_json">
-                <label for="COPumpStatus_json" class="formbuilder-text-label">MQTT json attribute dla statusu Pompy CO pieca węglowego<span class="tooltip" tooltip="MQTT Atrybut Json dla sprawdzenia czy pompy CO drugiego pieca pracują -gdy tak nie włącza się CO grzanie">:</span></label>
-                <input type="text" placeholder="%COPumpStatus_json%" class="form-control" name="COPumpStatus_json" access="false" value="%COPumpStatus_json%" maxlength="64" id="COPumpStatus_json" title="MQTT Atrybut Json dla sprawdzenia czy pompy CO drugiego pieca pracują -gdy tak nie włącza się CO grzanie">
+            <div class="formbuilder-text form-group field-SUPLA_FREQ_TOPIC">
+                <label for="SUPLA_FREQ_TOPIC" class="formbuilder-text-label">MQTT Topic dla pobrania wartości częstotliwości prądu w tej samej fazie sieci energetycznej<span class="tooltip" tooltip="MQTT Topic dla pobrania wartości częstotliwości prądu w tej samej fazie sieci energetycznej">:</span></label>
+                <input type="text" placeholder="%SUPLA_FREQ_TOPIC%" class="form-control" name="SUPLA_FREQ_TOPIC" access="false" value="%SUPLA_FREQ_TOPIC%" maxlength="64" id="SUPLA_FREQ_TOPIC" title="Topic dla pobrania wartości częstotliwości prądu w tej samej fazie sieci energetycznej">
             </div>
-            <div class="formbuilder-text form-group field-WaterPumpStatus_json">
-                <label for="WaterPumpStatus_json" class="formbuilder-text-label">MQTT json attribute dla statusu Pompy Wody pieca węglowego<span class="tooltip" tooltip="MQTT Atrybut Json dla sprawdzenia czy pompy Wody drugiego pieca pracują -gdy tak nie włącza się CO grzanie">:</span></label>
-                <input type="text" placeholder="%WaterPumpStatus_json%" class="form-control" name="WaterPumpStatus_json" access="false" value="%WaterPumpStatus_json%" maxlength="64" id="WaterPumpStatus_json" title="MQTT Atrybut Json dla sprawdzenia czy pompy Wody drugiego pieca pracują -gdy tak nie włącza się CO grzanie">
-            </div>
+
             <div class="">
-                <p class="form_delimiters" access="false" id="control-5382407">Sensory CO PARTER podłogówki:</p>
+                <p class="form_delimiters" access="false" id="control-5382407">Położenie odczytu czujnika wody w środkowej części baniaka CWU:</p>
             </div>
-            <div class="formbuilder-text form-group field-ROOMS_F1_GET_TOPIC">
-                <label for="ROOMS_F1_GET_TOPIC" class="formbuilder-text-label">MQTT Topic dla czujników CO z parteru<span class="tooltip" tooltip="MQTT Topic dla pobrania średniej temperatury z kondygnacji i maksymalnej temperatury nastawionej jako docelowej">:</span></label>
-                <input type="text" placeholder="%ROOMS_F1_GET_TOPIC%" class="form-control" name="ROOMS_F1_GET_TOPIC" access="false" value="%ROOMS_F1_GET_TOPIC%" maxlength="64" id="ROOMS_F1_GET_TOPIC" title="MQTT Topic dla pobrania średniej temperatury z kondygnacji i maksymalnej temperatury nastawionej jako docelowej">
+            <div class="formbuilder-text form-group field-BOILER_GAZ_CWU_TOPIC">
+                <label for="BOILER_GAZ_CWU_TOPIC" class="formbuilder-text-label">MQTT Topic dla odczytu czujnika wody w środkowej części baniaka CWU<span class="tooltip" tooltip="MQTT Topic dla odczytu czujnika wody w środkowej części baniaka CWU">:</span></label>
+                <input type="text" placeholder="%BOILER_GAZ_CWU_TOPIC%" class="form-control" name="BOILER_GAZ_CWU_TOPIC" access="false" value="%BOILER_GAZ_CWU_TOPIC%" maxlength="64" id="BOILER_GAZ_CWU_TOPIC" title="MQTT Topic dla odczytu czujnika wody w środkowej części baniaka CWU">
             </div>
-            <div class="formbuilder-text form-group field-roomF1temp_json">
-                <label for="roomF1temp_json" class="formbuilder-text-label">MQTT json attribute dla średniej temp. PARTER
-                    <br><span class="tooltip" tooltip="MQTT Topic dla pobrania średniej temperatury z kondygnacji">:</span></label>
-                <input type="text" placeholder="%roomF1temp_json%" class="form-control" name="roomF1temp_json" access="false" value="%roomF1temp_json%" maxlength="64" id="roomF1temp_json" title="MQTT Topic dla pobrania średniej temperatury z kondygnacji">
+            <div class="formbuilder-text form-group field-BOILER_GAZ_CWU_JSON">
+                <label for="BOILER_GAZ_CWU_JSON" class="formbuilder-text-label">MQTT json attribute dla  odczytu czujnika wody w środkowej części baniaka CWU
+                    <br><span class="tooltip" tooltip="MQTT json attribute dla  odczytu czujnika wody w środkowej części baniaka CWU">:</span></label>
+                <input type="text" placeholder="%BOILER_GAZ_CWU_JSON%" class="form-control" name="BOILER_GAZ_CWU_JSON" access="false" value="%BOILER_GAZ_CWU_JSON%" maxlength="64" id="BOILER_GAZ_CWU_JSON" title="MQTT json attribute dla  odczytu czujnika wody w środkowej części baniaka CWU">
             </div>
-            <div class="formbuilder-text form-group field-roomF1tempset_json">
-                <label for="roomF1tempset_json" class="formbuilder-text-label">MQTT json atrybut Temperatury nastawionej PARTER<span class="tooltip" tooltip="MQTT Topic dla pobrania maksymalnej temperatury nastawionej jako docelowej">:</span></label>
-                <input type="text" placeholder="%roomF1tempset_json%" class="form-control" name="roomF1tempset_json" access="false" value="%roomF1tempset_json%" maxlength="64" id="roomF1tempset_json" title="MQTT Topic dla pobrania maksymalnej temperatury nastawionej jako docelowej">
-            </div>
+
             <div class="">
                 <p class="form_delimiters" access="false" id="control-9701930">Sensory CO PIĘTRO podłogówki:</p>
             </div>

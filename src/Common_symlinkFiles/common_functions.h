@@ -157,7 +157,6 @@ DNSServer dnsServer;
 typedef struct
 {
   String Value;
-  String ValueHumid;
 } all_sensors_struct;
 all_sensors_struct ASS[ASS_Num];        //for get values from local variables to send to websocket
 String get_PlaceholderName(u_int i);    //replace specific placeholder -return String for specific ASS value  zestaw nazw z js i css i html dopasowania do liczb do łatwiejszego dopasowania
@@ -216,7 +215,7 @@ float opcohi = ecoModeDisabledMaxTemp,             // upper max heat boiler to C
 #endif
 const float ophi = 65,               // upper max heat water
             opcohistatic = opcohi,
-            oplo = 29,               // lower min heat water
+            oplo = 25,               // lower min heat water
             opcolo = oplo,           // lower min heat boiler to CO
             cutoffhi = 20,           // upper max cut-off temp above is heating CO disabled -range +-20
             cutofflo = -cutoffhi,    // lower min cut-off temp above is heating CO disabled
@@ -629,7 +628,7 @@ uint16_t publishMQTT(String &mqttTopicxx, String &mqttPayloadxx, int mqtt_Retain
 //Subscribe to MQTT topic
 uint16_t SubscribeMQTT(String &mqttTopicxx, u_int qos){
     uint16_t packetIdSub = 0;
-    if (mqttPayloadxx.length()>0) {
+    if (mqttTopicxx.length()>0) {
       #ifdef enableMQTT
       mqttclient.subscribe(mqttTopicxx.c_str());
       #endif
@@ -645,7 +644,7 @@ uint16_t SubscribeMQTT(String &mqttTopicxx, u_int qos){
 #if defined enableMQTT || defined enableMQTTAsync
 void HADiscovery(String sensorswitchValTopic, String appendname, String nameval, String discoverytopic, String DeviceClass = "\0", String unitClass = "\0", String stateClass = "\0", String HAicon = "\0", const String payloadvalue_startend_val = "", const String payloadON = "1", const String payloadOFF = "0")
 {
-  const String deviceid = "\"dev\":{\"ids\":\""+String(me_lokalizacja)+"\",\"name\":\""+String(me_lokalizacja)+"\",\"sw\":\"" + String(version) + "\",\"mdl\":\""+String(me_lokalizacja)+"\",\"mf\":\"" + String(MFG) + "\"}";
+  const String deviceid = ",\"dev\":{\"ids\":\""+String(me_lokalizacja)+"\",\"name\":\""+String(me_lokalizacja)+"\",\"sw\":\"" + String(version) + "\",\"mdl\":\""+String(me_lokalizacja)+"\",\"mf\":\"" + String(MFG) + "\"}";
   const String availabityTopic = ",\"avty_t\":\"" + String(WILL_TOPIC) + "\",\"pl_avail\":\"" + String(WILL_ONLINE) + "\",\"pl_not_avail\":\"" + String(WILL_OFFLINE) + "\"";
 
   String unitbuilder = "\0";
@@ -661,6 +660,7 @@ void HADiscovery(String sensorswitchValTopic, String appendname, String nameval,
   #define voltageswitch 9
   #define currentswitch 10
   #define frequencyswitch 11
+  #define timestampswitch 12
   DeviceClass.toLowerCase();
   stateClass.toLowerCase();
   HAicon.toLowerCase();
@@ -679,6 +679,9 @@ void HADiscovery(String sensorswitchValTopic, String appendname, String nameval,
     if (DeviceClass.indexOf("voltage") >= 0) DCswitch = voltageswitch;
     if (DeviceClass.indexOf("current") >= 0) DCswitch = currentswitch;
     if (DeviceClass.indexOf("frequency") >= 0) DCswitch = frequencyswitch;
+    if (DeviceClass.indexOf("timestamp") >= 0) DCswitch = timestampswitch;
+
+
 
     switch (DCswitch) {
       case tempswitch: {
@@ -708,7 +711,7 @@ void HADiscovery(String sensorswitchValTopic, String appendname, String nameval,
       }
 
       case switchswitch: {
-        unitbuilder = F(",\"pl_off\":\"OFF\",\"pl_on\":\"ON\",");
+        unitbuilder = F(",\"pl_off\":\"OFF\",\"pl_on\":\"ON\"");
         // if (unitClass.length() == 0 || unitClass == " ") unitClass = "m";
         // if (HAicon.length() == 0) HAicon = "mdi:speedometer-medium"; //fire";
         break;
@@ -741,6 +744,11 @@ void HADiscovery(String sensorswitchValTopic, String appendname, String nameval,
         if (HAicon.length() == 0) HAicon = "mdi:mdiCarSpeedLimiter";
         break;
       }
+      case timestampswitch: {
+        if (unitClass.length() == 0 || unitClass == " ") unitClass = "s";  ////cbar, bar, hPa, inHg, kPa, mbar, Pa, psi
+        if (HAicon.length() == 0) HAicon = "mdi:fire";
+        break;
+      }
       default: {
 
         break;
@@ -762,7 +770,7 @@ void HADiscovery(String sensorswitchValTopic, String appendname, String nameval,
   String TotalName = appendname;
   TotalName += nameval;
   sprintf(mqttTopic, "%s%s/config", discoverytopic.c_str(), TotalName.c_str());
-  sprintf(log_chars, "\"name\":\"%s\",\"uniq_id\": \"%s\",\"stat_t\":\"%s\",\"val_tpl\":\"{{value_json.%s}}\"%s%s,\"qos\":%s,%s",TotalName.c_str(), TotalName.c_str(), sensorswitchValTopic.c_str(), TotalName.c_str(), unitbuilder.c_str(), availabityTopic.c_str(), String(QOS).c_str(), deviceid.c_str());
+  sprintf(log_chars, "\"name\":\"%s\",\"uniq_id\": \"%s\",\"stat_t\":\"%s\",\"val_tpl\":\"{{value_json.%s}}\"%s%s,\"qos\":%s%s",TotalName.c_str(), TotalName.c_str(), sensorswitchValTopic.c_str(), TotalName.c_str(), unitbuilder.c_str(), availabityTopic.c_str(), String(QOS).c_str(), deviceid.c_str());
   String mqttTopicStr = String(mqttTopic);
   String mqttPayloadStr = String(log_chars);
   if (publishMQTT(mqttTopicStr, mqttPayloadStr, mqtt_Retain, QOS) > 0) log_message((char*)F("HA Discovery send OK with QOS > 0")); else log_message((char*)F("HA Discovery send OK with QOS = 0"));
@@ -2162,7 +2170,8 @@ char* toCharPointer (String ptrS) {
 }
 //***********************************************************************************************************************************************************************************************
 void SaveAssValue(uint8_t ASSV, String source_str, bool humid = false) {
-  if (!humid) ASS[ASSV].Value = source_str; else ASS[ASSV].ValueHumid = source_str;
+  ASS[ASSV].Value = source_str;
+//  if (!humid) ASS[ASSV].Value = source_str; else ASS[ASSV].ValueHumid = source_str;
 }
 //***********************************************************************************************************************************************************************************************
 void updateDatatoWWW_common()
@@ -3092,7 +3101,7 @@ void RemoteCommandReceived(uint8_t *data, size_t len)
   String d_oryg = d;
   d.toUpperCase();
   log_message((char*)F("------------------------ REMOTE COMMAND RECEIVED START ------------------------------------------------------------------------"), logCommandResponse);
-  sprintf(log_chars, "DirectCommands RemoteCommandReceived Received: %s (dł: %s)", String(d).c_str(), String(d.length()).c_str());
+  sprintf(log_chars, "DirectCommands RemoteCommand Received: %s (dł: %s)", String(d).c_str(), String(d.length()).c_str());
   log_message(log_chars, logCommandResponse);
 
 

@@ -31,7 +31,9 @@ void mqttCallbackAsString(String &topicStrFromMQTT, String &payloadStrFromMQTT) 
       waterThermBG = PayloadtoValidFloat(tmpStrmqtt, true);   //true to get output to serial and webserial
       sprintf(log_chars, "%s updated from MQTT to: %s", ident.c_str(), String(waterThermBG).c_str());
       log_message(log_chars);
+      waterThermBG_LastRead = millis();
       //      receivedmqttdata = true;    //makes every second run mqtt send and influx
+      
     } else {
       //sprintf(log_chars, "%s not updated from MQTT: %s, %s", ident.c_str(), getJsonVal(payloadStrFromMQTT, String(NEWStemp_json)).c_str(), String(PayloadtoValidFloatCheck(getJsonVal(payloadStrFromMQTT, String(NEWStemp_json)))).c_str());
       log_message(log_chars);

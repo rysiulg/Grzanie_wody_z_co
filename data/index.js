@@ -72,15 +72,16 @@ function updateSliderPWM(element) {
     {
         message = element.checked?"on":"off";
 
-
-        if (document.getElementById("boilerwww").checked) {
-            document.getElementById("BOILMODMODE").style.visibility = "visible";
-        } else {
-            document.getElementById("BOILMODMODE").style.visibility = "hidden";
-        }
-        //document.getElementsByClassName("BOILMODMODE").hidden = 'visible';
-        // document.getElementById("boilermodewww").style.visibility = 'visible';
-        // document.getElementById("boilermodewww").hidden = false;
+        try {
+            if (document.getElementById("boilerwww").checked) {
+                document.getElementById("BOILMODMODE").style.visibility = "visible";
+            } else {
+                document.getElementById("BOILMODMODE").style.visibility = "hidden";
+            }
+            //document.getElementsByClassName("BOILMODMODE").hidden = 'visible';
+            // document.getElementById("boilermodewww").style.visibility = 'visible';
+            // document.getElementById("boilermodewww").hidden = false;
+        } catch {}
     }
     if ((element.id).indexOf('RemoteCommand') >= 0 )
     {
@@ -157,6 +158,68 @@ function onMessage(event) {
             //      document.getElementById(key).focus();
             //      document.getElementById(key).click();
                 } else
+                if (key.trim() === "forceCO") {  //this is AUTO mode
+                    //               console.log(key+" Stan mode: "+myObj[key]);
+                    if (myObj[key].toLowerCase() === "on" || myObj[key] === "1") {
+                        document.getElementById(key).checked = true;
+                        //document.getElementById("slider1").disabled = true;
+                        //document.getElementById("slider6").disabled = true;
+                    } else {
+                        document.getElementById(key).checked = false;
+                        //document.getElementById("slider1").disabled = false;
+                        //document.getElementById("slider6").disabled = false;
+                    }
+                } else
+                if (key.trim() === "forceWater") {  //this is AUTO mode
+                    //               console.log(key+" Stan mode: "+myObj[key]);
+                    if (myObj[key].toLowerCase() === "on" || myObj[key] === "1") {
+                        document.getElementById(key).checked = true;
+                        //document.getElementById("slider1").disabled = true;
+                        //document.getElementById("slider6").disabled = true;
+                    } else {
+                        document.getElementById(key).checked = false;
+                        //document.getElementById("slider1").disabled = false;
+                        //document.getElementById("slider6").disabled = false;
+                    }
+                } else
+                if (key.trim() === "prgstatusrelay1WO") {  //this is AUTO mode
+                    //               console.log(key+" Stan mode: "+myObj[key]);
+                    if (myObj[key].toLowerCase() === "on" || myObj[key] === "1") {
+                        document.getElementById(key).checked = true;
+                        //document.getElementById("slider1").disabled = true;
+                        //document.getElementById("slider6").disabled = true;
+                    } else {
+                        document.getElementById(key).checked = false;
+                        //document.getElementById("slider1").disabled = false;
+                        //document.getElementById("slider6").disabled = false;
+                    }
+                } else
+                if (key.trim() === "prgstatusrelay2CO") {  //this is AUTO mode
+                    //               console.log(key+" Stan mode: "+myObj[key]);
+                    if (myObj[key].toLowerCase() === "on" || myObj[key] === "1") {
+                        document.getElementById(key).checked = true;
+                        //document.getElementById("slider1").disabled = true;
+                        //document.getElementById("slider6").disabled = true;
+                    } else {
+                        document.getElementById(key).checked = false;
+                        //document.getElementById("slider1").disabled = false;
+                        //document.getElementById("slider6").disabled = false;
+                    }
+                } else
+                if (key.trim() === "najpierwCO") {  //this is AUTO mode
+                    //               console.log(key+" Stan mode: "+myObj[key]);
+                    if (myObj[key].toLowerCase() === "on" || myObj[key] === "1") {
+                        document.getElementById(key).checked = true;
+                        //document.getElementById("slider1").disabled = true;
+                        //document.getElementById("slider6").disabled = true;
+                    } else {
+                        document.getElementById(key).checked = false;
+                        //document.getElementById("slider1").disabled = false;
+                        //document.getElementById("slider6").disabled = false;
+                    }
+                } else
+
+
                 if (key.trim() === "boilermodewww") {  //this is AUTO mode
     //               console.log(key+" Stan mode: "+myObj[key]);
                     if (myObj[key].toLowerCase() === "on" || myObj[key] === "1") {
@@ -234,16 +297,16 @@ function onMessage(event) {
                         document.getElementById(key).checked = false;
                     }
                 } else
-                if (key.trim() === "opcohi") {
-                    //               console.log(key+" Stan mode: "+myObj[key]);
-                    if (!isNaN(parseFloat(myObj[key]))) {
-                        document.getElementById("slider1").max = myObj[key];
-                        if (document.getElementById("slider1").value > myObj[key]) {
-                            document.getElementById("slider1").value = myObj[key];
-                            // document.getElementById("slider1").onchange();
-                        }
-                    }
-                } else
+                // if (key.trim() === "opcohi") {   //for opentherm this was added
+                //     //               console.log(key+" Stan mode: "+myObj[key]);
+                //     if (!isNaN(parseFloat(myObj[key]))) {
+                //         document.getElementById("slider1").max = myObj[key];
+                //         if (document.getElementById("slider1").value > myObj[key]) {
+                //             document.getElementById("slider1").value = myObj[key];
+                //             // document.getElementById("slider1").onchange();
+                //         }
+                //     }
+                // } else
                 if (key.trim() === "MemStats") {
                     document.getElementById(key).innerHTML= myObj[key];
                     document.getElementById(key+"1").innerHTML= myObj[key];

@@ -348,7 +348,6 @@ void loop()
 #if defined(debug) or defined(debug1)
     Serial.println("SAVING ENEREGY");
 #endif
-    SaveEnergy();
 #ifdef debug
     Serial.println("saved en...");
 #endif
@@ -362,7 +361,7 @@ void loop()
 
   if ((millis() - savetime > (saveminut)) and (allEnergy != (energy1used + energy2used)))
   {
-    SaveEnergy();
+    SaveConfig();
     sprintf(log_chars, "Saved energy after savetime, allEn: %s en1: %s en2: %s", String(allEnergy).c_str(), String(energy1used).c_str(), String(energy2used).c_str());
     log_message(log_chars,0);
     allEnergy = energy1used + energy2used;
