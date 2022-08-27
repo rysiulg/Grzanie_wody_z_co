@@ -2103,12 +2103,15 @@ void MainCommonSetup()  {
   Setup_FileSystem();
   if (loadConfig())
   {
+    CRTrunNumber++;
     sprintf(log_chars,"Config loaded. SSID: %s, Pass: %s", ssid, pass);
     log_message(log_chars);
+    SaveConfig();
   }
   else
   {
-    log_message((char*)F("Config not loaded!"));
+    CRTrunNumber++;
+    log_message((char*)F("Config not loaded! SPIFF Format"));
     SPIFFS.format();
     SaveConfig(); // overwrite with the default settings
   }
@@ -2116,7 +2119,6 @@ void MainCommonSetup()  {
   Setup_Mqtt();     //for async version move before wifi
 #endif
   Setup_WiFi();
-  CRTrunNumber++;
   #ifdef enableArduinoOTA
   Setup_OTA();
   #endif
@@ -2996,7 +2998,7 @@ bool loadConfig() {
       CRT = (u_int) getJsonVal(dane, "CRT").toInt();
       if (CRT > CRTrunNumber) CRTrunNumber = CRT;
     }
-    sprintf(log_chars,"Config loaded. SSID: %s, CRT: %s",String(ssid).c_str(), String(CRT).c_str());
+    sprintf(log_chars,"Config loaded. SSID: %s, CRT: %s",String(ssid).c_str(), String(CRTrunNumber).c_str());
     log_message(log_chars);
     EEPROM.end();
     return true; // return 1 if config loaded

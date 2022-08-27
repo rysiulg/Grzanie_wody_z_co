@@ -257,9 +257,9 @@ void updateDatatoWWW(){
 
     ptrS = F("<br> Energy 1 used WODA: <b>");
     ptrS += String(energy1used,4);
-    ptrS += F("kWh</b><br>, Energy 2 used CO: <b>");
+    ptrS += F("kWh</b><br>Energy 2 used CO: <b>");
     ptrS += String(energy2used,4);
-    ptrS += F("kWh</b><br> ADS initialised: <b>");
+    ptrS += F("kWh</b><br>ADS initialised: <b>");
     ptrS += String(isadslinitialised ? "Tak" : "Nie");
     ptrS += F("</B>");
     SaveAssValue(ASS_UsedMedia, ptrS);
